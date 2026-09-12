@@ -79,6 +79,28 @@ _TRANSLATIONS: dict[str, str] = {
     "Giao diện – Mở đầu": "Interface – Opening",
     "Giao diện – Kết thúc": "Interface – Closing",
     "Bỏ qua": "Skip",
+    # Mẫu chương trình
+    "Mẫu chương trình…": "Program templates…",
+    "Mẫu chương trình": "Program templates",
+    "Lưu chương trình hiện tại làm mẫu để dùng lại cho các sự kiện sau, hoặc "
+    "chọn một mẫu có sẵn để tải vào chương trình đang chỉnh sửa.": (
+        "Save the current program as a template to reuse for future events, "
+        "or pick a saved template to load into the program you're editing."
+    ),
+    "Lưu chương trình hiện tại làm mẫu mới…": "Save current program as a new template…",
+    "Tải mẫu đã chọn": "Load selected template",
+    "Xóa mẫu đã chọn": "Delete selected template",
+    "Lưu làm mẫu": "Save as template",
+    "Tên mẫu chương trình:": "Template name:",
+    "Ghi đè mẫu": "Overwrite template",
+    "Đã có mẫu cùng tên. Ghi đè?": "A template with this name already exists. Overwrite?",
+    "Không thể lưu mẫu": "Could not save template",
+    "Không thể tải mẫu": "Could not load template",
+    "Không thể xóa mẫu": "Could not delete template",
+    "Xóa mẫu": "Delete template",
+    "Xóa mẫu \"{name}\"?": "Delete template \"{name}\"?",
+    "Tải mẫu": "Load template",
+    "Đã tải mẫu chương trình.": "Program template loaded.",
     "Sẵn sàng": "Ready",
     "Chưa chọn": "Not selected",
     "📡 Điều khiển từ xa: cổng {port}": "📡 Remote control: port {port}",

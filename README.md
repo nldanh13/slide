@@ -114,6 +114,19 @@ chuyển sang màu đỏ và hiện dấu `-` khi đã quá giờ. Có thể t�
 Ngoài 2 nút **▲ Lên / ▼ Xuống**, bạn có thể kéo-thả trực tiếp một dòng trong bảng báo
 cáo viên để đổi thứ tự trình bày — thứ tự (cột STT) sẽ tự cập nhật ngay.
 
+## Mẫu chương trình dựng sẵn
+
+Bấm **Mẫu chương trình…** để:
+
+- **Lưu chương trình hiện tại làm mẫu mới** (đặt tên tùy ý, ví dụ "Hội nghị khoa học
+  thường quy") — lưu toàn bộ thông tin hiện có (tên chương trình, background/logo,
+  thời lượng thảo luận, danh sách báo cáo viên...) làm mẫu dùng lại cho sự kiện sau.
+- **Tải mẫu đã chọn** để nạp nhanh một mẫu có sẵn vào chương trình đang chỉnh sửa,
+  thay vì nhập lại từ đầu — hữu ích cho các sự kiện định kỳ có cấu trúc giống nhau.
+- **Xóa mẫu đã chọn** khi không còn cần dùng nữa.
+
+Các mẫu được lưu dưới dạng file JSON trong thư mục `templates/` cạnh ứng dụng.
+
 ## Nhập nhiều file PowerPoint cùng lúc
 
 Thay vì bấm **+ Thêm báo cáo viên** từng người, bấm **Nhập nhiều file PowerPoint…** để

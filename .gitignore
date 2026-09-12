@@ -6,3 +6,4 @@ autosave.json
 build/
 dist/
 *.spec
+templates/

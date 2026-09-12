@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from bulk_import import BulkImportDialog
+from template_dialog import TemplateDialog
 from core import Program, ProgramFileError, validate_program
 from dialogs import ReportDialog, RemoteDialog, choose_file
 from i18n import set_language, tr
@@ -227,6 +228,8 @@ class MainWindow(QMainWindow):
         self.load_btn.clicked.connect(self.load_program)
         self.save_btn = QPushButton(tr("Lưu chương trình"))
         self.save_btn.clicked.connect(self.save_program)
+        self.template_btn = QPushButton(tr("Mẫu chương trình…"))
+        self.template_btn.clicked.connect(self.show_template_dialog)
         self.preview_btn = QPushButton(tr("Xem thử màn hình"))
         self.preview_btn.clicked.connect(self.preview)
         self.remote_btn = QPushButton(tr("Điều khiển từ xa…"))
@@ -244,7 +247,7 @@ class MainWindow(QMainWindow):
         self.stop_btn.setObjectName("danger")
         self.stop_btn.clicked.connect(self.stop_show)
         for button in [
-            self.load_btn, self.save_btn, self.preview_btn, self.remote_btn, self.settings_btn,
+            self.load_btn, self.save_btn, self.template_btn, self.preview_btn, self.remote_btn, self.settings_btn,
             self.previous_btn, self.start_btn, self.next_btn, self.stop_btn,
         ]:
             footer.addWidget(button)
@@ -288,6 +291,7 @@ class MainWindow(QMainWindow):
         self.table.setHorizontalHeaderLabels([tr(h) for h in self.table_headers])
         self.load_btn.setText(tr("Mở chương trình"))
         self.save_btn.setText(tr("Lưu chương trình"))
+        self.template_btn.setText(tr("Mẫu chương trình…"))
         self.preview_btn.setText(tr("Xem thử màn hình"))
         self.remote_btn.setText(tr("Điều khiển từ xa…"))
         self.settings_btn.setText(tr("Cài đặt…"))
@@ -488,6 +492,16 @@ class MainWindow(QMainWindow):
         self._load_form()
         self._clear_autosave()
         self.status.setText(tr("Đã mở: {path}").format(path=path))
+
+    def show_template_dialog(self):
+        self._sync_program()
+        dialog = TemplateDialog(self, self.program)
+        if dialog.exec() and dialog.loaded_program is not None:
+            self.program = dialog.loaded_program
+            self.program_path = ""
+            self._load_form()
+            self._clear_autosave()
+            self.status.setText(tr("Đã tải mẫu chương trình."))
 
     def _show_stage(self):
         screen = self.screen.currentData()
