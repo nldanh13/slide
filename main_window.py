@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from bulk_import import BulkImportDialog
 from core import Program, ProgramFileError, validate_program
 from dialogs import ReportDialog, RemoteDialog, choose_file
 from i18n import set_language, tr
@@ -161,12 +162,37 @@ class MainWindow(QMainWindow):
         self.show_timer = QCheckBox(tr("Hiện đồng hồ đếm giờ trên sân khấu"))
         self.show_timer.setChecked(True)
         form.addWidget(self.show_timer, 5, 0, 1, 3)
+
+        self.opening_ppt = QLineEdit()
+        self.opening_ppt.setReadOnly(True)
+        self.label_opening_ppt = QLabel(tr("File khai mạc (PowerPoint, tùy chọn)"))
+        form.addWidget(self.label_opening_ppt, 6, 0)
+        form.addWidget(self.opening_ppt, 6, 1, 1, 2)
+        self.opening_ppt_btn = QPushButton(tr("Chọn…"))
+        self.opening_ppt_btn.clicked.connect(lambda: self._set_interface_ppt(self.opening_ppt))
+        form.addWidget(self.opening_ppt_btn, 6, 3)
+        self.opening_ppt_clear_btn = QPushButton(tr("Xóa"))
+        self.opening_ppt_clear_btn.clicked.connect(lambda: self.opening_ppt.clear())
+        form.addWidget(self.opening_ppt_clear_btn, 6, 4)
+
+        self.closing_ppt = QLineEdit()
+        self.closing_ppt.setReadOnly(True)
+        self.label_closing_ppt = QLabel(tr("File kết thúc (PowerPoint, tùy chọn)"))
+        form.addWidget(self.label_closing_ppt, 7, 0)
+        form.addWidget(self.closing_ppt, 7, 1, 1, 2)
+        self.closing_ppt_btn = QPushButton(tr("Chọn…"))
+        self.closing_ppt_btn.clicked.connect(lambda: self._set_interface_ppt(self.closing_ppt))
+        form.addWidget(self.closing_ppt_btn, 7, 3)
+        self.closing_ppt_clear_btn = QPushButton(tr("Xóa"))
+        self.closing_ppt_clear_btn.clicked.connect(lambda: self.closing_ppt.clear())
+        form.addWidget(self.closing_ppt_clear_btn, 7, 4)
         root.addLayout(form)
 
         toolbar = QHBoxLayout()
         self.toolbar_buttons = []
         for text, slot in [
             ("+ Thêm báo cáo viên", self.add_report),
+            ("Nhập nhiều file PowerPoint…", self.bulk_import),
             ("Sửa", self.edit_report),
             ("Xóa", self.delete_report),
             ("▲ Lên", lambda: self.move_report(-1)),
@@ -251,6 +277,12 @@ class MainWindow(QMainWindow):
         self.label_post_url.setText(tr("Link Post-test"))
         self.virtual_screen.setText(tr("Màn hình ảo (chỉ bật khi test, không có máy chiếu)"))
         self.show_timer.setText(tr("Hiện đồng hồ đếm giờ trên sân khấu"))
+        self.label_opening_ppt.setText(tr("File khai mạc (PowerPoint, tùy chọn)"))
+        self.label_closing_ppt.setText(tr("File kết thúc (PowerPoint, tùy chọn)"))
+        for button in (self.opening_ppt_btn, self.closing_ppt_btn):
+            button.setText(tr("Chọn…"))
+        for button in (self.opening_ppt_clear_btn, self.closing_ppt_clear_btn):
+            button.setText(tr("Xóa"))
         for button, key in self.toolbar_buttons:
             button.setText(tr(key))
         self.table.setHorizontalHeaderLabels([tr(h) for h in self.table_headers])
@@ -294,6 +326,17 @@ class MainWindow(QMainWindow):
         if value:
             edit.setText(value)
 
+    def _set_interface_ppt(self, edit):
+        value = choose_file(self, tr("Chọn file"), "PowerPoint (*.ppt *.pptx *.pptm *.pps *.ppsx)")
+        if value:
+            edit.setText(value)
+
+    def bulk_import(self):
+        self._sync_program()
+        dialog = BulkImportDialog(self, self.program)
+        if dialog.exec():
+            self._load_form()
+
     def _sync_program(self):
         self.program.event_name = self.event_name.text().strip()
         self.program.organizer = self.organizer.text().strip()
@@ -301,6 +344,8 @@ class MainWindow(QMainWindow):
         self.program.logo = self.logo.text().strip()
         self.program.discussion_minutes = self.discussion.value()
         self.program.post_test_url = self.post_url.text().strip()
+        self.program.opening_ppt = self.opening_ppt.text().strip()
+        self.program.closing_ppt = self.closing_ppt.text().strip()
 
     def _load_form(self):
         self.event_name.setText(self.program.event_name)
@@ -309,6 +354,8 @@ class MainWindow(QMainWindow):
         self.logo.setText(self.program.logo)
         self.discussion.setValue(self.program.discussion_minutes)
         self.post_url.setText(self.program.post_test_url)
+        self.opening_ppt.setText(self.program.opening_ppt)
+        self.closing_ppt.setText(self.program.closing_ppt)
         self._refresh_table()
 
     def _refresh_table(self):
@@ -496,7 +543,7 @@ class MainWindow(QMainWindow):
         if not (0 <= self.scene_index < len(self.scenes)):
             return
         scene = self.scenes[self.scene_index]
-        label = tr(SCENE_LABELS.get(scene["type"], scene["type"]))
+        label = self._scene_label(scene)
         status_text = tr("Phần {index}/{total} – {label}").format(
             index=self.scene_index + 1, total=len(self.scenes), label=label
         )
@@ -516,12 +563,17 @@ class MainWindow(QMainWindow):
             self._show_stage()
             self.stage.show_scene(scene)
 
+    def _scene_label(self, scene: dict) -> str:
+        if scene["type"] == "powerpoint" and scene.get("interface_kind"):
+            return tr("Khai mạc (PowerPoint)") if scene["interface_kind"] == "opening" else tr("Kết thúc (PowerPoint)")
+        return tr(SCENE_LABELS.get(scene["type"], scene["type"]))
+
     def _update_timer_overlay(self, scene: dict) -> None:
         if not self.show_timer.isChecked():
             self.timer_overlay.stop()
             return
         screen = self.screen.currentData() or QApplication.primaryScreen()
-        if scene["type"] == "powerpoint":
+        if scene["type"] == "powerpoint" and scene["report"].duration_minutes > 0:
             self.timer_overlay.start(scene["report"].duration_minutes, screen.geometry())
         elif scene["type"] == "discussion":
             self.timer_overlay.start(scene["duration_minutes"], screen.geometry())

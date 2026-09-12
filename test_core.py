@@ -24,6 +24,21 @@ class ProgramTest(unittest.TestCase):
             ["opening", "discussion", "post_test", "closing"],
         )
 
+    def test_scene_order_with_opening_and_closing_ppt(self):
+        program = Program(
+            reports=[Report(name="A")],
+            opening_ppt="opening.pptx",
+            closing_ppt="closing.pptx",
+        )
+        scenes = program.scenes()
+        self.assertEqual(scenes[0]["type"], "powerpoint")
+        self.assertEqual(scenes[0]["interface_kind"], "opening")
+        self.assertEqual(scenes[0]["report"].ppt, "opening.pptx")
+        self.assertEqual(scenes[0]["report"].duration_minutes, 0)
+        self.assertEqual(scenes[-1]["type"], "powerpoint")
+        self.assertEqual(scenes[-1]["interface_kind"], "closing")
+        self.assertEqual(scenes[-1]["report"].ppt, "closing.pptx")
+
     def test_round_trip_json(self):
         program = Program(event_name="Hội nghị", reports=[Report(name="Báo cáo viên")])
         with tempfile.TemporaryDirectory() as folder:
@@ -51,6 +66,14 @@ class ProgramTest(unittest.TestCase):
             path.write_text('{"truong_khong_ton_tai": 1, "reports": []}', encoding="utf-8")
             with self.assertRaises(ProgramFileError):
                 Program.load(str(path))
+
+    def test_load_old_json_without_interface_ppt_fields_is_backward_compatible(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "old.json"
+            path.write_text('{"event_name": "Cũ", "reports": []}', encoding="utf-8")
+            loaded = Program.load(str(path))
+        self.assertEqual(loaded.opening_ppt, "")
+        self.assertEqual(loaded.closing_ppt, "")
 
 
 class ValidateProgramTest(unittest.TestCase):
@@ -93,6 +116,24 @@ class ValidateProgramTest(unittest.TestCase):
         )
         errors = validate_program(program)
         self.assertTrue(any("khong_ton_tai.png" in e for e in errors))
+
+    def test_missing_opening_ppt_is_reported(self):
+        program = Program(
+            event_name="Hội nghị",
+            opening_ppt="khong_ton_tai.pptx",
+            reports=[Report(name="A", topic="T", ppt=__file__)],
+        )
+        errors = validate_program(program)
+        self.assertTrue(any("khai mạc" in e for e in errors))
+
+    def test_missing_closing_ppt_is_reported(self):
+        program = Program(
+            event_name="Hội nghị",
+            closing_ppt="khong_ton_tai.pptx",
+            reports=[Report(name="A", topic="T", ppt=__file__)],
+        )
+        errors = validate_program(program)
+        self.assertTrue(any("kết thúc" in e for e in errors))
 
 
 if __name__ == "__main__":

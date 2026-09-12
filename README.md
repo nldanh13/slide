@@ -114,6 +114,27 @@ chuyển sang màu đỏ và hiện dấu `-` khi đã quá giờ. Có thể t�
 Ngoài 2 nút **▲ Lên / ▼ Xuống**, bạn có thể kéo-thả trực tiếp một dòng trong bảng báo
 cáo viên để đổi thứ tự trình bày — thứ tự (cột STT) sẽ tự cập nhật ngay.
 
+## Nhập nhiều file PowerPoint cùng lúc
+
+Thay vì bấm **+ Thêm báo cáo viên** từng người, bấm **Nhập nhiều file PowerPoint…** để
+chọn cả loạt file `.pptx` một lần. Ứng dụng đoán theo tên file:
+
+- File chứa từ khóa như "khai mạc", "chương trình", "MC", "background", "mở đầu"...
+  được xếp vào nhóm **Giao diện – Mở đầu**.
+- File chứa từ khóa như "kết thúc", "bế mạc", "closing"... được xếp vào nhóm
+  **Giao diện – Kết thúc**.
+- Các file còn lại được xếp vào nhóm **Báo cáo viên** (tên báo cáo viên tạm đoán từ
+  tên file, bạn có thể sửa lại).
+
+Bảng xem trước cho phép bạn đổi lại phân loại từng dòng (hoặc chọn **Bỏ qua**) trước
+khi bấm **Nhập**. Sau khi nhập, các báo cáo viên xuất hiện trong bảng chính như bình
+thường (vào **Sửa** để bổ sung đơn vị/chuyên đề/ảnh/thời lượng); file khai mạc/kết thúc
+được điền vào 2 ô **File khai mạc** / **File kết thúc** ở khung thông tin chương trình.
+
+Khi đã khai báo file khai mạc/kết thúc, chương trình sẽ **mở file đó bằng PowerPoint**
+(giống hệt cách chiếu bài của báo cáo viên) thay cho màn hình nền tĩnh mặc định ở phần
+mở đầu/kết thúc. Để trống (bấm **Xóa**) nếu muốn quay lại dùng màn hình nền mặc định.
+
 ## Đóng gói thành file .exe (không cần cài Python)
 
 Nếu muốn đưa ứng dụng cho người khác dùng mà không cần cài Python/thư viện, chạy file

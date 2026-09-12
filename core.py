@@ -27,6 +27,8 @@ class Program:
     logo: str = ""
     discussion_minutes: int = 20
     post_test_url: str = ""
+    opening_ppt: str = ""
+    closing_ppt: str = ""
     reports: list[Report] = field(default_factory=list)
 
     @classmethod
@@ -56,8 +58,18 @@ class Program:
         except OSError as exc:
             raise ProgramFileError(f"Không thể lưu file: {exc}") from exc
 
+    def _interface_scene(self, ppt_path: str, kind: str) -> dict:
+        return {
+            "type": "powerpoint",
+            "report": Report(name=self.event_name, ppt=ppt_path, duration_minutes=0),
+            "interface_kind": kind,
+        }
+
     def scenes(self) -> list[dict]:
-        result = [{"type": "opening", "title": "CHÀO MỪNG QUÝ ĐẠI BIỂU"}]
+        if self.opening_ppt:
+            result = [self._interface_scene(self.opening_ppt, "opening")]
+        else:
+            result = [{"type": "opening", "title": "CHÀO MỪNG QUÝ ĐẠI BIỂU"}]
         for index, report in enumerate(self.reports, start=1):
             result.extend(
                 [
@@ -82,9 +94,12 @@ class Program:
                     "title": "BÀI KIỂM TRA SAU CHƯƠNG TRÌNH",
                     "url": self.post_test_url,
                 },
-                {"type": "closing", "title": "TRÂN TRỌNG CẢM ƠN"},
             ]
         )
+        if self.closing_ppt:
+            result.append(self._interface_scene(self.closing_ppt, "closing"))
+        else:
+            result.append({"type": "closing", "title": "TRÂN TRỌNG CẢM ƠN"})
         return result
 
 
@@ -96,6 +111,10 @@ def validate_program(program: Program) -> list[str]:
         errors.append(f"Không tìm thấy ảnh nền: {program.background}")
     if program.logo and not Path(program.logo).is_file():
         errors.append(f"Không tìm thấy ảnh logo: {program.logo}")
+    if program.opening_ppt and not Path(program.opening_ppt).is_file():
+        errors.append(f"Không tìm thấy file PowerPoint khai mạc: {program.opening_ppt}")
+    if program.closing_ppt and not Path(program.closing_ppt).is_file():
+        errors.append(f"Không tìm thấy file PowerPoint kết thúc: {program.closing_ppt}")
     if not program.reports:
         errors.append("Chưa có báo cáo viên.")
     for index, report in enumerate(program.reports, start=1):

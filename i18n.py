@@ -56,6 +56,29 @@ _TRANSLATIONS: dict[str, str] = {
         "unexpectedly). Restore that program?"
     ),
     "Đã khôi phục dữ liệu tự động lưu.": "Auto-saved data restored.",
+    "File khai mạc (PowerPoint, tùy chọn)": "Opening file (PowerPoint, optional)",
+    "File kết thúc (PowerPoint, tùy chọn)": "Closing file (PowerPoint, optional)",
+    "Nhập nhiều file PowerPoint…": "Import multiple PowerPoint files…",
+    "Khai mạc (PowerPoint)": "Opening (PowerPoint)",
+    "Kết thúc (PowerPoint)": "Closing (PowerPoint)",
+    # Bulk import dialog
+    "Nhập nhiều file PowerPoint": "Import multiple PowerPoint files",
+    "Chọn nhiều file PowerPoint cùng lúc. Ứng dụng sẽ đoán file nào là bài báo cáo "
+    "và file nào là giao diện mở đầu/kết thúc dựa theo tên file — hãy kiểm tra và "
+    "sửa lại phân loại nếu đoán sai trước khi bấm Nhập.": (
+        "Select multiple PowerPoint files at once. The app guesses which files are "
+        "speaker talks and which are the opening/closing interface based on the "
+        "filename — check and fix the classification before clicking Import."
+    ),
+    "Chọn file PowerPoint…": "Choose PowerPoint files…",
+    "File": "File",
+    "Tên báo cáo viên (tạm)": "Speaker name (draft)",
+    "Phân loại": "Classification",
+    "Nhập": "Import",
+    "Báo cáo viên": "Speaker",
+    "Giao diện – Mở đầu": "Interface – Opening",
+    "Giao diện – Kết thúc": "Interface – Closing",
+    "Bỏ qua": "Skip",
     "Sẵn sàng": "Ready",
     "Chưa chọn": "Not selected",
     "📡 Điều khiển từ xa: cổng {port}": "📡 Remote control: port {port}",
