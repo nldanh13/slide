@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
 
 from core import Program, Report, validate_program
 from powerpoint import PowerPointController, PowerPointError
+from remote import RemoteControl
 
 
 APP_STYLE = """
@@ -114,6 +115,57 @@ class ReportDialog(QDialog):
             ppt=self.ppt.text().strip(),
             duration_minutes=self.duration.value(),
         )
+
+
+class RemoteDialog(QDialog):
+    def __init__(self, parent, remote: RemoteControl):
+        super().__init__(parent)
+        self.setWindowTitle("Điều khiển từ xa")
+        self.setMinimumWidth(360)
+
+        url = remote.url()
+
+        info = QLabel(
+            "Dùng điện thoại kết nối cùng Wi-Fi với máy tính này, quét mã QR "
+            "hoặc mở đường dẫn bên dưới bằng trình duyệt để điều khiển chương trình."
+        )
+        info.setWordWrap(True)
+
+        qr_label = QLabel()
+        qr_label.setAlignment(Qt.AlignCenter)
+        try:
+            import qrcode
+
+            image = qrcode.make(url)
+            data = io.BytesIO()
+            image.save(data, format="PNG")
+            pix = QPixmap()
+            pix.loadFromData(data.getvalue())
+            qr_label.setPixmap(pix.scaled(240, 240, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        except Exception:
+            qr_label.setText("Không tạo được mã QR")
+
+        link = QLineEdit(url)
+        link.setReadOnly(True)
+
+        note = QLabel(
+            "Lưu ý: liên kết chỉ dùng được khi điện thoại và máy tính cùng mạng Wi-Fi. "
+            "Khởi động lại ứng dụng sẽ tạo mã truy cập mới."
+        )
+        note.setWordWrap(True)
+        note.setStyleSheet("color: #64748b; font-size: 9pt;")
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Close)
+        buttons.button(QDialogButtonBox.Close).setText("Đóng")
+        buttons.rejected.connect(self.reject)
+        buttons.accepted.connect(self.accept)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(info)
+        layout.addWidget(qr_label)
+        layout.addWidget(link)
+        layout.addWidget(note)
+        layout.addWidget(buttons)
 
 
 class StageWindow(QWidget):
@@ -267,6 +319,13 @@ class MainWindow(QMainWindow):
         self.stage = StageWindow()
         self.stage.escape_requested.connect(self.stop_show)
 
+        self.remote = RemoteControl()
+        self.remote.next_requested.connect(self.next_scene)
+        self.remote.previous_requested.connect(self.previous_scene)
+        self.remote.start_requested.connect(self.start_show)
+        self.remote.stop_requested.connect(self.stop_show)
+        self.remote.start()
+
         self._build_ui()
         self._build_shortcuts()
         self._refresh_table()
@@ -351,6 +410,8 @@ class MainWindow(QMainWindow):
         save_btn.clicked.connect(self.save_program)
         preview_btn = QPushButton("Xem thử màn hình")
         preview_btn.clicked.connect(self.preview)
+        remote_btn = QPushButton("Điều khiển từ xa…")
+        remote_btn.clicked.connect(self.show_remote_dialog)
         self.previous_btn = QPushButton("◀ Phần trước")
         self.previous_btn.clicked.connect(self.previous_scene)
         self.start_btn = QPushButton("BẮT ĐẦU")
@@ -361,7 +422,7 @@ class MainWindow(QMainWindow):
         stop_btn = QPushButton("KẾT THÚC")
         stop_btn.setObjectName("danger")
         stop_btn.clicked.connect(self.stop_show)
-        for button in [load_btn, save_btn, preview_btn, self.previous_btn, self.start_btn, self.next_btn, stop_btn]:
+        for button in [load_btn, save_btn, preview_btn, remote_btn, self.previous_btn, self.start_btn, self.next_btn, stop_btn]:
             footer.addWidget(button)
         root.addLayout(footer)
 
@@ -489,6 +550,10 @@ class MainWindow(QMainWindow):
         self._show_stage()
         self.stage.show_scene({"type": "opening", "title": "CHÀO MỪNG QUÝ ĐẠI BIỂU"})
 
+    def show_remote_dialog(self):
+        dialog = RemoteDialog(self, self.remote)
+        dialog.exec()
+
     def start_show(self):
         self._sync_program()
         errors = validate_program(self.program)
@@ -508,7 +573,9 @@ class MainWindow(QMainWindow):
             "powerpoint": "PowerPoint", "transition": "Chuyển tiếp",
             "discussion": "Thảo luận", "post_test": "Post-test", "closing": "Kết thúc",
         }.get(scene["type"], scene["type"])
-        self.status.setText(f"Phần {self.scene_index + 1}/{len(self.scenes)} – {label}")
+        status_text = f"Phần {self.scene_index + 1}/{len(self.scenes)} – {label}"
+        self.status.setText(status_text)
+        self.remote.set_status(status_text)
         if scene["type"] == "powerpoint":
             self.stage.hide()
             self.ppt_seen_running = False
@@ -556,10 +623,12 @@ class MainWindow(QMainWindow):
         self.scenes = []
         self.scene_index = -1
         self.status.setText("Đã kết thúc trình chiếu")
+        self.remote.set_status("Đã kết thúc trình chiếu")
 
     def closeEvent(self, event):
         self.stage.close()
         self.ppt.shutdown()
+        self.remote.stop()
         event.accept()
 
 

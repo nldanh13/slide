@@ -47,6 +47,22 @@ Trong PowerPoint vẫn dùng các phím chuyển slide thông thường như `Sp
 Các phím điều khiển chương trình cần được bấm khi cửa sổ điều khiển đang có focus;
 khi PowerPoint đang chiếu, hãy kết thúc bài bằng `Esc` để app tự chuyển tiếp.
 
+## Điều khiển từ xa bằng điện thoại
+
+Nếu bạn không ngồi ngay cạnh máy tính chạy chương trình (ví dụ báo cáo viên
+đứng ở bục dùng đúng máy đó), bạn có thể điều khiển từ xa bằng điện thoại:
+
+1. Đảm bảo điện thoại và máy tính đang **cùng một mạng Wi-Fi**.
+2. Trong cửa sổ điều khiển, bấm **Điều khiển từ xa…**.
+3. Dùng camera điện thoại quét mã QR hiện ra (hoặc gõ tay đường dẫn hiển thị bên dưới)
+   để mở trang điều khiển bằng trình duyệt điện thoại.
+4. Trang này có 4 nút: **Trước**, **Tiếp**, **BẮT ĐẦU**, **KẾT THÚC** — tương ứng với
+   các nút trên máy tính, và luôn hiển thị phần đang chiếu hiện tại.
+
+Đường dẫn có kèm theo một mã truy cập ngẫu nhiên để hạn chế người khác trong cùng
+mạng Wi-Fi bấm nhầm; mỗi lần mở lại ứng dụng sẽ sinh mã mới. Tính năng này chỉ nên
+dùng trong mạng nội bộ/tin cậy của sự kiện.
+
 ## Lưu ý màn hình PowerPoint
 
 PowerPoint dùng màn hình trình chiếu đã chọn trong chính PowerPoint. Trước chương trình,
