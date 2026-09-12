@@ -4,7 +4,6 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
-    QFileDialog,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -17,14 +16,10 @@ from PySide6.QtWidgets import (
 )
 
 from core import Program, Report
+from file_library import pick_file
 from i18n import tr
 from qr_utils import make_qr_pixmap
 from remote import RemoteControl
-
-
-def choose_file(parent, title, file_filter):
-    value, _ = QFileDialog.getOpenFileName(parent, title, "", file_filter)
-    return value
 
 
 class ReportDialog(QDialog):
@@ -61,7 +56,7 @@ class ReportDialog(QDialog):
         form.addRow(tr("Đơn vị"), self.department)
         form.addRow(tr("Tên chuyên đề"), self.topic)
         form.addRow(tr("Ảnh báo cáo viên"), self._photo_row())
-        form.addRow(tr("File PowerPoint*"), self._path_row(self.ppt, "PowerPoint (*.ppt *.pptx *.pptm *.pps *.ppsx)"))
+        form.addRow(tr("File PowerPoint*"), self._path_row(self.ppt, "ppt"))
         form.addRow(tr("Thời lượng dự kiến (phút)"), self.duration)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
@@ -74,13 +69,13 @@ class ReportDialog(QDialog):
         layout.addLayout(form)
         layout.addWidget(buttons)
 
-    def _path_row(self, edit, file_filter):
+    def _path_row(self, edit, kind: str):
         box = QWidget()
         row = QHBoxLayout(box)
         row.setContentsMargins(0, 0, 0, 0)
         button = QPushButton(tr("Chọn…"))
         button.clicked.connect(
-            lambda: (value := choose_file(self, tr("Chọn file"), file_filter)) and edit.setText(value)
+            lambda: (value := pick_file(self, self.program, button, kind)) and edit.setText(value)
         )
         row.addWidget(edit, 1)
         row.addWidget(button)
@@ -99,8 +94,7 @@ class ReportDialog(QDialog):
         row.addWidget(self.photo, 1)
         button = QPushButton(tr("Chọn…"))
         button.clicked.connect(
-            lambda: (value := choose_file(self, tr("Chọn file"), "Ảnh (*.png *.jpg *.jpeg)"))
-            and self.photo.setText(value)
+            lambda: (value := pick_file(self, self.program, button, "image")) and self.photo.setText(value)
         )
         row.addWidget(button)
         return box

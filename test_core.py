@@ -203,6 +203,38 @@ class ProgramSlideHelpersTest(unittest.TestCase):
         program = Program(discussion_slide=4)
         self.assertEqual(program.slide_config_for("discussion"), ("", 0))
 
+
+class RememberFileTest(unittest.TestCase):
+    def test_ppt_file_goes_to_ppt_library(self):
+        program = Program()
+        program.remember_file("bai_bao_cao.pptx")
+        self.assertEqual(program.ppt_library, ["bai_bao_cao.pptx"])
+        self.assertEqual(program.image_library, [])
+
+    def test_image_file_goes_to_image_library(self):
+        program = Program()
+        program.remember_file("nen.png")
+        self.assertEqual(program.image_library, ["nen.png"])
+        self.assertEqual(program.ppt_library, [])
+
+    def test_unknown_extension_is_ignored(self):
+        program = Program()
+        program.remember_file("ghi_chu.txt")
+        self.assertEqual(program.ppt_library, [])
+        self.assertEqual(program.image_library, [])
+
+    def test_empty_path_is_ignored(self):
+        program = Program()
+        program.remember_file("")
+        self.assertEqual(program.ppt_library, [])
+        self.assertEqual(program.image_library, [])
+
+    def test_duplicate_path_is_not_added_twice(self):
+        program = Program()
+        program.remember_file("bai_bao_cao.pptx")
+        program.remember_file("bai_bao_cao.pptx")
+        self.assertEqual(program.ppt_library, ["bai_bao_cao.pptx"])
+
     def test_image_override_for_background_returns_background_field(self):
         program = Program(background="bg.png")
         self.assertEqual(program.image_override_for("background"), "bg.png")

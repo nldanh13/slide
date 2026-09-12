@@ -33,8 +33,9 @@ from backups import create_backup
 from bulk_import import classify_file, guess_report_name
 from template_dialog import TemplateDialog
 from core import Program, ProgramFileError, Report, validate_program
-from dialogs import ReportDialog, RemoteDialog, choose_file
+from dialogs import ReportDialog, RemoteDialog
 from export_schedule import export_schedule_pdf
+from file_library import pick_file
 from i18n import set_language, tr
 from interface_media_dialog import InterfaceMediaDialog
 from paths import app_dir
@@ -145,9 +146,6 @@ SCENE_LABELS = {
     "post_test": "Post-test",
     "closing": "Kết thúc",
 }
-
-PPT_FILTER = "PowerPoint (*.ppt *.pptx *.pptm *.pps *.ppsx)"
-IMAGE_FILTER = "Ảnh (*.png *.jpg *.jpeg *.bmp)"
 
 # (tên trường trong Program, nhãn hiển thị, loại file) cho từng phần giao diện có thể
 # gán riêng file/ảnh — hiển thị trong bảng "Giao diện chương trình" ở cửa sổ chính.
@@ -261,7 +259,7 @@ class MainWindow(QMainWindow):
         form.addWidget(self.label_logo, 2, 0)
         form.addWidget(self.logo, 2, 1)
         self.logo_btn = QPushButton(tr("Chọn logo…"))
-        self.logo_btn.clicked.connect(lambda: self._set_path(self.logo, "Ảnh (*.png *.jpg *.jpeg)"))
+        self.logo_btn.clicked.connect(self._choose_logo)
         form.addWidget(self.logo_btn, 2, 2)
         self.label_screen = QLabel(tr("Màn hình sân khấu"))
         form.addWidget(self.label_screen, 3, 0)
@@ -517,10 +515,10 @@ class MainWindow(QMainWindow):
         elif len(screens) > 1:
             self.screen.setCurrentIndex(1)
 
-    def _set_path(self, edit, file_filter):
-        value = choose_file(self, tr("Chọn file"), file_filter)
+    def _choose_logo(self):
+        value = pick_file(self, self.program, self.logo_btn, "image")
         if value:
-            edit.setText(value)
+            self.logo.setText(value)
 
     def import_files(self):
         """Nút nhập duy nhất: chọn 1 hoặc nhiều file PowerPoint/ảnh cùng lúc, ứng dụng đoán
@@ -533,6 +531,7 @@ class MainWindow(QMainWindow):
         if not paths:
             return
         for path in paths:
+            self.program.remember_file(path)
             role = classify_file(path)
             if role == "speaker":
                 self.program.reports.append(Report(name=guess_report_name(path), ppt=path))
@@ -573,8 +572,9 @@ class MainWindow(QMainWindow):
         table.setFixedHeight(total + 4)
 
     def _choose_interface_file(self, field: str, kind: str):
-        file_filter = PPT_FILTER if kind == "ppt" else IMAGE_FILTER
-        value = choose_file(self, tr("Chọn file"), file_filter)
+        row = next(i for i, (f, _label, _kind) in enumerate(INTERFACE_SLOTS) if f == field)
+        anchor_button = self._interface_action_widgets[row][0]
+        value = pick_file(self, self.program, anchor_button, kind)
         if value:
             setattr(self.program, field, value)
             self._refresh_interface_table()

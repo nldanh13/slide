@@ -24,6 +24,9 @@ class Report:
 #: mọi vai trò khác nếu không được gán slide/ảnh riêng sẽ rơi về dùng slide/ảnh của "background".
 INTERFACE_ROLES = ["background", "discussion", "post_test", "closing"]
 
+_PPT_EXTENSIONS = {".ppt", ".pptx", ".pptm", ".pps", ".ppsx"}
+_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp"}
+
 
 @dataclass
 class Program:
@@ -44,6 +47,24 @@ class Program:
     post_test_image: str = ""
     closing_image: str = ""
     reports: list[Report] = field(default_factory=list)
+    #: Thư viện file đã nhập ở bất kỳ đâu trong chương trình — cho phép chọn lại ngay
+    #: ở chỗ khác thay vì phải duyệt file lại từ đầu mỗi lần (xem file_library.py).
+    ppt_library: list[str] = field(default_factory=list)
+    image_library: list[str] = field(default_factory=list)
+
+    def remember_file(self, path: str) -> None:
+        """Ghi nhớ 1 file (PowerPoint hoặc ảnh) vào thư viện dùng chung của chương trình."""
+        if not path:
+            return
+        ext = Path(path).suffix.lower()
+        if ext in _PPT_EXTENSIONS:
+            library = self.ppt_library
+        elif ext in _IMAGE_EXTENSIONS:
+            library = self.image_library
+        else:
+            return
+        if path not in library:
+            library.append(path)
 
     def slide_for(self, role: str) -> int:
         return getattr(self, f"{role}_slide", 0)

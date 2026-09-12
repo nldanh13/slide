@@ -152,6 +152,7 @@ _TRANSLATIONS: dict[str, str] = {
     "(dùng ô \"Background\" ở màn hình chính)": "(use the \"Background\" field on the main screen)",
     "Sẵn sàng": "Ready",
     "Chưa chọn": "Not selected",
+    "📁 Nhập file mới…": "📁 Import new file…",
     "Xem trước sân khấu": "Stage preview",
     "Chưa bắt đầu": "Not started",
     "CHƯA BẮT ĐẦU TRÌNH CHIẾU": "SHOW NOT STARTED",

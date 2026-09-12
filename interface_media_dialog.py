@@ -3,7 +3,6 @@ from __future__ import annotations
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
-    QFileDialog,
     QFormLayout,
     QGridLayout,
     QHBoxLayout,
@@ -16,6 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from core import Program
+from file_library import pick_file
 from i18n import tr
 
 _ROLE_LABELS = {
@@ -47,12 +47,12 @@ class InterfaceMediaDialog(QDialog):
         master_row = QHBoxLayout()
         self.master_ppt_edit = QLineEdit(self.program.master_ppt)
         self.master_ppt_edit.setReadOnly(True)
-        choose_master_btn = QPushButton(tr("Chọn…"))
-        choose_master_btn.clicked.connect(self._choose_master_ppt)
+        self.choose_master_btn = QPushButton(tr("Chọn…"))
+        self.choose_master_btn.clicked.connect(self._choose_master_ppt)
         clear_master_btn = QPushButton(tr("Xóa"))
         clear_master_btn.clicked.connect(self._clear_master_ppt)
         master_row.addWidget(self.master_ppt_edit, 1)
-        master_row.addWidget(choose_master_btn)
+        master_row.addWidget(self.choose_master_btn)
         master_row.addWidget(clear_master_btn)
 
         master_form = QFormLayout()
@@ -65,6 +65,7 @@ class InterfaceMediaDialog(QDialog):
 
         self.slide_spins: dict[str, QSpinBox] = {}
         self.image_edits: dict[str, QLineEdit] = {}
+        self.image_choose_buttons: dict[str, QPushButton] = {}
 
         grid.addWidget(QLabel(tr("Nền / Mở đầu (mặc định)")), 1, 0)
         bg_spin = QSpinBox()
@@ -93,6 +94,7 @@ class InterfaceMediaDialog(QDialog):
             self.image_edits[role] = edit
             choose_btn = QPushButton(tr("Chọn…"))
             choose_btn.clicked.connect(lambda _checked=False, r=role: self._choose_image(r))
+            self.image_choose_buttons[role] = choose_btn
             clear_btn = QPushButton(tr("Xóa"))
             clear_btn.clicked.connect(lambda _checked=False, r=role: self.image_edits[r].clear())
             image_row.addWidget(edit, 1)
@@ -115,9 +117,7 @@ class InterfaceMediaDialog(QDialog):
         layout.addWidget(buttons)
 
     def _choose_master_ppt(self):
-        path, _ = QFileDialog.getOpenFileName(
-            self, tr("Chọn file"), "", "PowerPoint (*.ppt *.pptx *.pptm *.pps *.ppsx)"
-        )
+        path = pick_file(self, self.program, self.choose_master_btn, "ppt")
         if path:
             self.master_ppt_edit.setText(path)
 
@@ -125,9 +125,7 @@ class InterfaceMediaDialog(QDialog):
         self.master_ppt_edit.clear()
 
     def _choose_image(self, role: str):
-        path, _ = QFileDialog.getOpenFileName(
-            self, tr("Chọn file"), "", "Ảnh (*.png *.jpg *.jpeg *.bmp)"
-        )
+        path = pick_file(self, self.program, self.image_choose_buttons[role], "image")
         if path:
             self.image_edits[role].setText(path)
 
