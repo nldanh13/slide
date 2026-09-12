@@ -19,6 +19,7 @@ class AudioController:
         self.player = None
         self.audio_output = None
         self._current_path = ""
+        self._volume = 0.7
 
     def play_loop(self, path: str) -> None:
         if not path or not Path(path).is_file():
@@ -32,6 +33,10 @@ class AudioController:
 
             player, audio_output = self._player_factory()
             player.setAudioOutput(audio_output)
+            try:
+                audio_output.setVolume(self._volume)
+            except Exception:
+                pass
             player.setSource(QUrl.fromLocalFile(str(Path(path).resolve())))
             player.setLoops(-1)  # QMediaPlayer.Loops.Infinite
             player.play()
@@ -52,3 +57,16 @@ class AudioController:
         self.player = None
         self.audio_output = None
         self._current_path = ""
+
+    def is_playing(self) -> bool:
+        return self.player is not None
+
+    def set_volume(self, volume: float) -> None:
+        """volume: 0.0 – 1.0. Áp dụng ngay nếu đang phát; luôn được nhớ lại để
+        dùng cho lần play_loop() kế tiếp."""
+        self._volume = max(0.0, min(1.0, volume))
+        if self.audio_output is not None:
+            try:
+                self.audio_output.setVolume(self._volume)
+            except Exception:
+                pass

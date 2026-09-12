@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import time
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer
@@ -20,6 +21,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QMessageBox,
     QPushButton,
+    QSlider,
     QSpinBox,
     QTabWidget,
     QTableWidget,
@@ -35,7 +37,7 @@ from bulk_import import classify_file, guess_report_name
 from template_dialog import TemplateDialog
 from core import Program, ProgramFileError, Report, validate_program
 from dialogs import ReportDialog, RemoteDialog
-from export_schedule import export_schedule_pdf
+from export_schedule import export_duration_report_pdf, export_schedule_pdf
 from file_library import pick_file
 from i18n import set_language, tr
 from interface_media_dialog import InterfaceMediaDialog
@@ -44,6 +46,7 @@ from powerpoint import PowerPointController, PowerPointError
 from remote import RemoteControl
 from settings import AppSettings
 from settings_dialog import SettingsDialog
+from slide_export import SlideExportError, export_slide_image
 from stage import StageWindow
 from timer_overlay import TimerOverlay
 
@@ -207,6 +210,12 @@ class MainWindow(QMainWindow):
         self.stage.escape_requested.connect(self.stop_show)
         self.timer_overlay = TimerOverlay()
         self.audio = AudioController()
+        self.audio.set_volume(self.program.background_music_volume)
+        self._last_previewed_slide = 0
+        self._now = time.monotonic
+        self._actual_seconds: dict[int, float] = {}
+        self._current_ppt_start: float | None = None
+        self._current_ppt_report: Report | None = None
 
         self.remote = RemoteControl()
         self.remote.next_requested.connect(self.next_scene)
@@ -374,6 +383,22 @@ class MainWindow(QMainWindow):
         self._size_interface_table()
         interface_layout.addWidget(self.interface_table)
 
+        music_controls = QHBoxLayout()
+        self.music_preview_btn = QPushButton(tr("▶ Nghe thử nhạc nền"))
+        self.music_preview_btn.clicked.connect(self._toggle_music_preview)
+        music_controls.addWidget(self.music_preview_btn)
+        self.music_volume_caption = QLabel(tr("Âm lượng"))
+        music_controls.addWidget(self.music_volume_caption)
+        self.music_volume_slider = QSlider(Qt.Horizontal)
+        self.music_volume_slider.setRange(0, 100)
+        self.music_volume_slider.setValue(int(self.program.background_music_volume * 100))
+        self.music_volume_slider.valueChanged.connect(self._on_music_volume_changed)
+        music_controls.addWidget(self.music_volume_slider, 1)
+        self.music_volume_value_label = QLabel(f"{self.music_volume_slider.value()}%")
+        self.music_volume_value_label.setFixedWidth(40)
+        music_controls.addWidget(self.music_volume_value_label)
+        interface_layout.addLayout(music_controls)
+
         self.interface_media_btn = QPushButton(tr("Cấu hình slide nâng cao (từ file chương trình tổng)…"))
         self.interface_media_btn.clicked.connect(self.show_interface_media_dialog)
         interface_layout.addWidget(self.interface_media_btn)
@@ -413,6 +438,8 @@ class MainWindow(QMainWindow):
         file_menu.addSeparator()
         self.export_pdf_action = file_menu.addAction(tr("Xuất lịch trình (PDF)…"))
         self.export_pdf_action.triggered.connect(self.export_schedule)
+        self.export_duration_action = file_menu.addAction(tr("Xuất báo cáo thời lượng (PDF)…"))
+        self.export_duration_action.triggered.connect(self.export_duration_report)
         self.file_menu_btn.setMenu(file_menu)
 
         self.tools_menu_btn = QPushButton(tr("Công cụ ▾"))
@@ -481,6 +508,8 @@ class MainWindow(QMainWindow):
             choose_btn.setText(tr("Chọn…"))
             clear_btn.setToolTip(tr("Xóa"))
         self._refresh_interface_table()
+        self.music_volume_caption.setText(tr("Âm lượng"))
+        self._sync_music_preview_button()
         self.interface_media_btn.setText(tr("Cấu hình slide nâng cao (từ file chương trình tổng)…"))
         self.file_menu_btn.setText(tr("Quản lý chương trình ▾"))
         self.load_action.setText(tr("Mở chương trình"))
@@ -488,6 +517,7 @@ class MainWindow(QMainWindow):
         self.backup_action.setText(tr("Khôi phục sao lưu…"))
         self.template_action.setText(tr("Mẫu chương trình…"))
         self.export_pdf_action.setText(tr("Xuất lịch trình (PDF)…"))
+        self.export_duration_action.setText(tr("Xuất báo cáo thời lượng (PDF)…"))
         self.tools_menu_btn.setText(tr("Công cụ ▾"))
         self.preview_action.setText(tr("Xem thử màn hình"))
         self.remote_action.setText(tr("Điều khiển từ xa…"))
@@ -603,6 +633,8 @@ class MainWindow(QMainWindow):
         self.logo.setText(self.program.logo)
         self.discussion.setValue(self.program.discussion_minutes)
         self.post_url.setText(self.program.post_test_url)
+        self.music_volume_slider.setValue(int(self.program.background_music_volume * 100))
+        self.audio.set_volume(self.program.background_music_volume)
         self._refresh_table()
         self._refresh_interface_table()
 
@@ -765,6 +797,28 @@ class MainWindow(QMainWindow):
             return
         self.status.setText(tr("Đã xuất lịch trình: {path}").format(path=path))
 
+    def export_duration_report(self):
+        if not self._actual_seconds:
+            QMessageBox.information(
+                self,
+                tr("Chưa có dữ liệu"),
+                tr("Chưa có báo cáo viên nào trình bày trong lần chạy này để thống kê thời lượng."),
+            )
+            return
+        safe_name = re.sub(r'[\\/:*?"<>|]', "_", self.program.event_name).strip()
+        default_name = f"thoi_luong_{safe_name}.pdf" if safe_name else "thoi_luong.pdf"
+        path, _ = QFileDialog.getSaveFileName(
+            self, tr("Xuất báo cáo thời lượng (PDF)"), default_name, "PDF (*.pdf)"
+        )
+        if not path:
+            return
+        try:
+            export_duration_report_pdf(self.program, self._actual_seconds, path)
+        except ProgramFileError as exc:
+            QMessageBox.critical(self, tr("Không thể xuất PDF"), str(exc))
+            return
+        self.status.setText(tr("Đã xuất báo cáo thời lượng: {path}").format(path=path))
+
     def _update_preview(self, scene: dict, caption: str = "") -> None:
         """Cập nhật khung xem trước lớn ở giữa cửa sổ điều khiển — luôn phản
         chiếu đúng nội dung đang/sắp hiện trên màn hình sân khấu thật, để
@@ -783,6 +837,31 @@ class MainWindow(QMainWindow):
             self.audio.play_loop(self.program.background_music)
         else:
             self.audio.stop()
+        self._sync_music_preview_button()
+
+    def _toggle_music_preview(self) -> None:
+        """Nút 'Nghe thử nhạc nền': cho phép nghe thử/chỉnh âm lượng ngay trong lúc
+        setup, không cần bấm BẮT ĐẦU trình chiếu thật mới biết nhạc nghe thế nào."""
+        if self.audio.is_playing():
+            self.audio.stop()
+        elif self.program.background_music:
+            self.audio.set_volume(self.music_volume_slider.value() / 100)
+            self.audio.play_loop(self.program.background_music)
+        else:
+            QMessageBox.information(
+                self, tr("Chưa chọn nhạc nền"), tr("Hãy chọn file nhạc nền ở bảng bên trên trước.")
+            )
+        self._sync_music_preview_button()
+
+    def _on_music_volume_changed(self, value: int) -> None:
+        self.program.background_music_volume = value / 100
+        self.music_volume_value_label.setText(f"{value}%")
+        self.audio.set_volume(value / 100)
+
+    def _sync_music_preview_button(self) -> None:
+        self.music_preview_btn.setText(
+            tr("⏸ Dừng nghe thử") if self.audio.is_playing() else tr("▶ Nghe thử nhạc nền")
+        )
 
     def _show_stage(self):
         screen = self.screen.currentData()
@@ -840,6 +919,9 @@ class MainWindow(QMainWindow):
             return
         self.scenes = self.program.scenes()
         self.scene_index = 0
+        self._actual_seconds = {}
+        self._current_ppt_start = None
+        self._current_ppt_report = None
         self._autosave()
         self._show_current_scene()
 
@@ -863,8 +945,11 @@ class MainWindow(QMainWindow):
             self.audio.stop()
             try:
                 self.ppt.start(scene["report"].ppt)
+                self._begin_ppt_timing(scene["report"])
+                self._last_previewed_slide = 0
                 # PowerPoint chạy qua COM nên không thể chiếu trực tiếp vào khung xem
                 # trước — hiện thông báo đang trình chiếu kèm tên báo cáo viên thay thế.
+                # (Slide thật sẽ mirror vào ngay khi _monitor_powerpoint xuất được ảnh.)
                 self._update_preview(
                     {"type": "transition", "title": tr("ĐANG TRÌNH CHIẾU POWERPOINT"), "report": scene["report"]},
                     label,
@@ -900,6 +985,46 @@ class MainWindow(QMainWindow):
         else:
             self.timer_overlay.stop()
 
+    def _begin_ppt_timing(self, report: Report) -> None:
+        self._current_ppt_start = self._now()
+        self._current_ppt_report = report
+
+    def _end_ppt_timing(self) -> None:
+        """Cộng dồn thời gian báo cáo viên vừa trình bày (tính bằng giây thực tế đã
+        trôi qua từ lúc mở PowerPoint) vào tổng cho báo cáo viên đó, dùng để xuất
+        báo cáo thời lượng thực tế so với dự kiến sau khi kết thúc chương trình."""
+        if self._current_ppt_start is None or self._current_ppt_report is None:
+            return
+        elapsed = self._now() - self._current_ppt_start
+        key = id(self._current_ppt_report)
+        self._actual_seconds[key] = self._actual_seconds.get(key, 0.0) + elapsed
+        self._current_ppt_start = None
+        self._current_ppt_report = None
+
+    def _poll_ppt_slide_preview(self) -> None:
+        """Xuất ảnh slide PowerPoint hiện tại (qua COM) để mirror vào khung xem
+        trước mỗi khi báo cáo viên chuyển slide — chỉ xuất khi số slide thay đổi
+        (có cache theo mtime+số slide ở slide_export nên không lặp lại việc xuất
+        cho cùng 1 slide). Lỗi xuất ảnh bị bỏ qua âm thầm, giữ nguyên thông báo
+        'ĐANG TRÌNH CHIẾU POWERPOINT' đã hiện từ trước."""
+        if not (0 <= self.scene_index < len(self.scenes)):
+            return
+        scene = self.scenes[self.scene_index]
+        if scene.get("type") != "powerpoint":
+            return
+        slide_number = self.ppt.current_slide_number()
+        if slide_number <= 0 or slide_number == self._last_previewed_slide:
+            return
+        self._last_previewed_slide = slide_number
+        try:
+            image_path = export_slide_image(scene["report"].ppt, slide_number)
+        except SlideExportError:
+            return
+        self.preview_pane.show_image_only(image_path)
+        self.preview_caption.setText(
+            tr("Slide {n} — {label}").format(n=slide_number, label=self._scene_label(scene))
+        )
+
     def _prepare_stage_for_scene(self, scene: dict) -> None:
         """Hiện sẵn nội dung của scene sắp tới lên màn hình sân khấu trước khi đóng
         PowerPoint hiện tại, để lúc PowerPoint đóng thì bên dưới đã là app thay vì desktop."""
@@ -928,6 +1053,7 @@ class MainWindow(QMainWindow):
             if not self._confirm_interrupt_presentation():
                 return
             self._prepare_stage_for_scene(self.scenes[self.scene_index + 1])
+            self._end_ppt_timing()
             self.ppt.close_presentation()
             # Vừa chủ động đóng PowerPoint theo lệnh người dùng — không phải do báo cáo
             # viên tự thoát — nên phải hủy cờ này, tránh _monitor_powerpoint hiểu nhầm
@@ -943,6 +1069,7 @@ class MainWindow(QMainWindow):
             if not self._confirm_interrupt_presentation():
                 return
             self._prepare_stage_for_scene(self.scenes[self.scene_index - 1])
+            self._end_ppt_timing()
             self.ppt.close_presentation()
             self.ppt_seen_running = False
         self.scene_index -= 1
@@ -955,14 +1082,17 @@ class MainWindow(QMainWindow):
                 self.stage.hide()
                 self._pending_ppt_hide_stage = False
             self.ppt_seen_running = True
+            self._poll_ppt_slide_preview()
         elif self.ppt_seen_running:
             self.ppt_seen_running = False
+            self._end_ppt_timing()
             if self.scene_index < len(self.scenes) - 1:
                 self._prepare_stage_for_scene(self.scenes[self.scene_index + 1])
             self.ppt.close_presentation()
             self.next_scene()
 
     def stop_show(self):
+        mid_presentation = False
         if self.scenes:
             mid_presentation = (
                 0 <= self.scene_index < len(self.scenes)
@@ -979,12 +1109,15 @@ class MainWindow(QMainWindow):
             )
             if not self._confirm(tr("Kết thúc trình chiếu"), question):
                 return
+        if mid_presentation:
+            self._end_ppt_timing()
         self.ppt_seen_running = False
         self._pending_ppt_hide_stage = False
         self.ppt.close_presentation()
         self.stage.hide()
         self.timer_overlay.stop()
         self.audio.stop()
+        self._sync_music_preview_button()
         self.scenes = []
         self.scene_index = -1
         self._update_preview({"type": "opening", "title": tr("CHƯA BẮT ĐẦU TRÌNH CHIẾU")}, tr("Chưa bắt đầu"))

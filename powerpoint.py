@@ -50,6 +50,14 @@ class PowerPointController:
         except Exception:
             return False
 
+    def current_slide_number(self) -> int:
+        """Số thứ tự slide đang hiện trong bài trình chiếu (1-based), hoặc 0 nếu
+        không xác định được (không có slideshow đang chạy, lỗi COM...)."""
+        try:
+            return int(self.slideshow.View.CurrentShowPosition)
+        except Exception:
+            return 0
+
     def next_slide(self) -> None:
         try:
             self.slideshow.View.Next()

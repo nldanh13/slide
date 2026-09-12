@@ -75,7 +75,17 @@ class StageWindow(QWidget):
     def paintEvent(self, event):
         super().paintEvent(event)
         painter = QPainter(self)
+        is_slide_mirror = self.scene.get("type") == "powerpoint_slide"
         if not self.background.isNull():
+            if is_slide_mirror:
+                # Mirror slide PowerPoint thật: hiện trọn vẹn slide (letterbox), không cắt
+                # xén/tô tối như ảnh nền thông thường, để nội dung slide đọc được rõ ràng.
+                painter.fillRect(self.rect(), Qt.black)
+                scaled = self.background.scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                x = (self.width() - scaled.width()) // 2
+                y = (self.height() - scaled.height()) // 2
+                painter.drawPixmap(x, y, scaled)
+                return
             scaled = self.background.scaled(self.size(), Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
             x = (scaled.width() - self.width()) // 2
             y = (scaled.height() - self.height()) // 2
@@ -108,6 +118,20 @@ class StageWindow(QWidget):
         path = resolve_scene_image(self.program, scene_type)
         self.background_path = path
         self.background = QPixmap(path) if path and Path(path).is_file() else QPixmap()
+
+    def show_image_only(self, path: str) -> None:
+        """Hiện đúng 1 ảnh toàn khung, không tiêu đề/phụ đề/logo gì thêm — dùng để
+        mirror slide PowerPoint thật đang trình chiếu vào khung xem trước, khác với
+        show_scene() vốn dựng giao diện đầy đủ cho các loại cảnh có sẵn."""
+        self.scene = {"type": "powerpoint_slide"}
+        self.background_path = path
+        self.background = QPixmap(path) if path and Path(path).is_file() else QPixmap()
+        self.photo.hide()
+        self.qr.hide()
+        self.kicker.setText("")
+        self.title.setText("")
+        self.subtitle.setText("")
+        self.update()
 
     def show_scene(self, scene: dict):
         self.scene = scene

@@ -130,6 +130,26 @@ _TRANSLATIONS: dict[str, str] = {
     "Không thể xuất PDF": "Could not export PDF",
     "Đã xuất lịch trình: {path}": "Schedule exported: {path}",
     "Chưa có báo cáo viên": "No speakers yet",
+    # Nhạc nền: nghe thử + âm lượng
+    "▶ Nghe thử nhạc nền": "▶ Preview music",
+    "⏸ Dừng nghe thử": "⏸ Stop preview",
+    "Âm lượng": "Volume",
+    "Chưa chọn nhạc nền": "No background music selected",
+    "Hãy chọn file nhạc nền ở bảng bên trên trước.": "Please select a background music file in the table above first.",
+    # Báo cáo thời lượng thực tế
+    "Xuất báo cáo thời lượng (PDF)…": "Export duration report (PDF)…",
+    "Xuất báo cáo thời lượng (PDF)": "Export duration report (PDF)",
+    "Chưa có dữ liệu": "No data yet",
+    "Chưa có báo cáo viên nào trình bày trong lần chạy này để thống kê thời lượng.": (
+        "No speaker has presented in this run yet, so there is no duration data to export."
+    ),
+    "Đã xuất báo cáo thời lượng: {path}": "Duration report exported: {path}",
+    "Báo cáo thời lượng trình bày thực tế": "Actual presentation duration report",
+    "Dự kiến (phút)": "Planned (minutes)",
+    "Thực tế (phút)": "Actual (minutes)",
+    "Chênh lệch (phút)": "Difference (minutes)",
+    # Xem trước slide PowerPoint thật
+    "Slide {n} — {label}": "Slide {n} — {label}",
     "Quản lý chương trình ▾": "Manage program ▾",
     # Slide/ảnh riêng cho từng phần
     "Cấu hình slide/ảnh riêng cho từng phần…": "Configure per-section slide/image…",

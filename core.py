@@ -50,6 +50,7 @@ class Program:
     #: Nhạc nền phát lặp lại khi chờ khai mạc, giải lao thảo luận và lúc kết thúc
     #: (tự tắt khi có báo cáo viên đang trình bày hoặc PowerPoint khai mạc/kết thúc chạy).
     background_music: str = ""
+    background_music_volume: float = 0.7
     reports: list[Report] = field(default_factory=list)
     #: Thư viện file đã nhập ở bất kỳ đâu trong chương trình — cho phép chọn lại ngay
     #: ở chỗ khác thay vì phải duyệt file lại từ đầu mỗi lần (xem file_library.py).

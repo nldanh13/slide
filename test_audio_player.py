@@ -31,7 +31,11 @@ class FakePlayer:
 
 
 class FakeAudioOutput:
-    pass
+    def __init__(self):
+        self.volume = None
+
+    def setVolume(self, volume):
+        self.volume = volume
 
 
 class AudioControllerTest(unittest.TestCase):
@@ -39,11 +43,14 @@ class AudioControllerTest(unittest.TestCase):
         self.tmp = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
         self.created_players: list[FakePlayer] = []
+        self.created_outputs: list[FakeAudioOutput] = []
 
         def factory():
             player = FakePlayer()
+            output = FakeAudioOutput()
             self.created_players.append(player)
-            return player, FakeAudioOutput()
+            self.created_outputs.append(output)
+            return player, output
 
         self.controller = AudioController(player_factory=factory)
 
@@ -98,6 +105,35 @@ class AudioControllerTest(unittest.TestCase):
     def test_stop_without_playback_does_not_error(self):
         self.controller.stop()
         self.assertIsNone(self.controller.player)
+
+    def test_is_playing_reflects_state(self):
+        self.assertFalse(self.controller.is_playing())
+        path = self._make_file("nhac.mp3")
+        self.controller.play_loop(path)
+        self.assertTrue(self.controller.is_playing())
+        self.controller.stop()
+        self.assertFalse(self.controller.is_playing())
+
+    def test_new_playback_uses_last_set_volume(self):
+        self.controller.set_volume(0.3)
+        path = self._make_file("nhac.mp3")
+        self.controller.play_loop(path)
+        self.assertAlmostEqual(self.created_outputs[0].volume, 0.3)
+
+    def test_set_volume_applies_live_while_playing(self):
+        path = self._make_file("nhac.mp3")
+        self.controller.play_loop(path)
+        self.controller.set_volume(0.9)
+        self.assertAlmostEqual(self.created_outputs[0].volume, 0.9)
+
+    def test_set_volume_is_clamped_to_valid_range(self):
+        self.controller.set_volume(1.5)
+        path = self._make_file("nhac.mp3")
+        self.controller.play_loop(path)
+        self.assertAlmostEqual(self.created_outputs[0].volume, 1.0)
+
+        self.controller.set_volume(-0.5)
+        self.assertAlmostEqual(self.created_outputs[0].volume, 0.0)
 
 
 if __name__ == "__main__":

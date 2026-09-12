@@ -147,6 +147,29 @@ Bấm **Xuất lịch trình (PDF)…** để xuất danh sách báo cáo viên 
 thời lượng) và thời gian thảo luận thành 1 file PDF gọn gàng — tiện in phát cho ban tổ
 chức, MC hoặc bảo vệ mà không cần mở ứng dụng để xem lịch.
 
+## Nhạc nền
+
+Ở tab **Giao diện chương trình**, chọn 1 file âm thanh (.mp3/.wav/.ogg/.m4a/.flac) cho
+mục **Nhạc nền (chờ / thảo luận / kết thúc)**. Nhạc sẽ tự động phát lặp lại lúc màn hình
+chờ khai mạc, giải lao thảo luận và lúc kết thúc — tự tắt ngay khi có báo cáo viên đang
+giới thiệu hoặc PowerPoint đang chạy, tránh chồng tiếng. Bấm **▶ Nghe thử nhạc nền** và
+kéo thanh **Âm lượng** để kiểm tra/chỉnh âm lượng ngay trong lúc setup, không cần bấm
+BẮT ĐẦU trình chiếu thật mới biết nhạc nghe thế nào.
+
+## Xem trước slide PowerPoint thật đang trình chiếu
+
+Trong lúc báo cáo viên trình bày, khung **Xem trước sân khấu** ở giữa màn hình điều khiển
+sẽ tự động mirror đúng slide PowerPoint đang hiện (xuất ảnh slide qua PowerPoint mỗi khi
+báo cáo viên chuyển slide), giúp người vận hành theo dõi tiến độ bài nói mà không cần
+đứng cạnh máy chiếu. Tính năng này cần Microsoft PowerPoint đã cài trên máy.
+
+## Báo cáo thời lượng trình bày thực tế
+
+Ứng dụng tự theo dõi thời gian mỗi báo cáo viên thực sự trình bày (từ lúc PowerPoint mở
+đến lúc chuyển sang phần khác). Sau khi chạy xong (hoặc đang chạy dở), bấm **Xuất báo cáo
+thời lượng (PDF)…** để xuất bảng so sánh thời lượng dự kiến và thực tế cho từng báo cáo
+viên — hữu ích để rút kinh nghiệm quản lý thời gian cho các sự kiện sau.
+
 ## Mẫu chương trình dựng sẵn
 
 Bấm **Mẫu chương trình…** để:

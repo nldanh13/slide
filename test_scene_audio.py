@@ -2,6 +2,7 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from PySide6.QtWidgets import QApplication, QMessageBox
 
@@ -21,6 +22,12 @@ class FakeAudioController:
     def stop(self):
         self.playing_path = None
         self.stop_calls += 1
+
+    def is_playing(self):
+        return self.playing_path is not None
+
+    def set_volume(self, volume):
+        pass
 
 
 class SceneAudioTest(unittest.TestCase):
@@ -115,6 +122,46 @@ class SceneAudioTest(unittest.TestCase):
         self.window.start_show()
         self.app.processEvents()
         self.assertEqual(self.audio.play_calls, [])
+
+
+class MusicPreviewControlsTest(unittest.TestCase):
+    """Nút 'Nghe thử nhạc nền' + thanh âm lượng — dùng để setup/kiểm tra nhạc nền
+    ngay trong app, không cần chạy thử toàn bộ chương trình."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.app = QApplication.instance() or QApplication([])
+
+    def setUp(self):
+        from main_window import MainWindow
+
+        self.window = MainWindow()
+        self.addCleanup(self.window.remote.stop)
+        self.addCleanup(self.window.close)
+        self.audio = FakeAudioController()
+        self.window.audio = self.audio
+
+    def test_toggle_starts_and_stops_preview(self):
+        self.window.program.background_music = "nhac.mp3"
+        self.window._toggle_music_preview()
+        self.assertEqual(self.audio.playing_path, "nhac.mp3")
+        self.assertEqual(self.window.music_preview_btn.text(), "⏸ Dừng nghe thử")
+
+        self.window._toggle_music_preview()
+        self.assertIsNone(self.audio.playing_path)
+        self.assertEqual(self.window.music_preview_btn.text(), "▶ Nghe thử nhạc nền")
+
+    def test_toggle_without_music_shows_message_and_does_not_play(self):
+        self.window.program.background_music = ""
+        with mock.patch.object(QMessageBox, "information") as info:
+            self.window._toggle_music_preview()
+        info.assert_called_once()
+        self.assertIsNone(self.audio.playing_path)
+
+    def test_volume_slider_updates_program_and_label(self):
+        self.window.music_volume_slider.setValue(42)
+        self.assertAlmostEqual(self.window.program.background_music_volume, 0.42)
+        self.assertEqual(self.window.music_volume_value_label.text(), "42%")
 
 
 if __name__ == "__main__":
