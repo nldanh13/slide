@@ -10,7 +10,6 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFileDialog,
-    QFrame,
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
@@ -21,8 +20,8 @@ from PySide6.QtWidgets import (
     QMenu,
     QMessageBox,
     QPushButton,
-    QScrollArea,
     QSpinBox,
+    QTabWidget,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -106,6 +105,16 @@ QGroupBox::title {
     subcontrol-origin: margin; subcontrol-position: top left;
     left: 10px; padding: 0 6px; color: #60a5fa; background: #1b1d23;
 }
+
+QWidget#tabPage { background: #202329; }
+QTabWidget::pane { background: #202329; border: 1px solid #30343d; border-radius: 8px; top: -1px; }
+QTabBar::tab {
+    background: #23262e; color: #9aa3b2; padding: 8px 16px; margin-right: 2px;
+    border: 1px solid #30343d; border-bottom: 0;
+    border-top-left-radius: 6px; border-top-right-radius: 6px;
+}
+QTabBar::tab:selected { background: #202329; color: #60a5fa; font-weight: 600; }
+QTabBar::tab:hover { background: #2a2d36; }
 
 QCheckBox { spacing: 8px; background: transparent; }
 QCheckBox::indicator {
@@ -226,11 +235,12 @@ class MainWindow(QMainWindow):
 
         body = QHBoxLayout()
         body.setSpacing(14)
-        left_layout = QVBoxLayout()
-        left_layout.setSpacing(10)
+        self.left_tabs = QTabWidget()
 
-        self.info_group = QGroupBox(tr("Thông tin chương trình"))
+        self.info_group = QWidget()
+        self.info_group.setObjectName("tabPage")
         form = QGridLayout(self.info_group)
+        form.setContentsMargins(10, 14, 10, 10)
         self.event_name = QLineEdit(self.program.event_name)
         self.organizer = QLineEdit()
         self.logo = QLineEdit()
@@ -272,10 +282,13 @@ class MainWindow(QMainWindow):
         self.show_timer = QCheckBox(tr("Hiện đồng hồ đếm giờ trên sân khấu"))
         self.show_timer.setChecked(True)
         form.addWidget(self.show_timer, 7, 0, 1, 3)
-        left_layout.addWidget(self.info_group)
+        form.setRowStretch(8, 1)
+        self.left_tabs.addTab(self.info_group, tr("Thông tin chương trình"))
 
-        self.speakers_group = QGroupBox(tr("Báo cáo viên"))
+        self.speakers_group = QWidget()
+        self.speakers_group.setObjectName("tabPage")
         speakers_layout = QVBoxLayout(self.speakers_group)
+        speakers_layout.setContentsMargins(10, 14, 10, 10)
 
         toolbar = QHBoxLayout()
         self.toolbar_buttons = []
@@ -310,10 +323,12 @@ class MainWindow(QMainWindow):
         self.table.doubleClicked.connect(self.edit_report)
         self.table.model().rowsMoved.connect(self._on_rows_dragged)
         speakers_layout.addWidget(self.table, 1)
-        left_layout.addWidget(self.speakers_group, 1)
+        self.left_tabs.addTab(self.speakers_group, tr("Báo cáo viên"))
 
-        self.interface_group = QGroupBox(tr("Giao diện chương trình"))
+        self.interface_group = QWidget()
+        self.interface_group.setObjectName("tabPage")
         interface_layout = QVBoxLayout(self.interface_group)
+        interface_layout.setContentsMargins(10, 14, 10, 10)
 
         self.interface_table = QTableWidget(len(INTERFACE_SLOTS), 3)
         self.interface_headers = ["Phần", "File", ""]
@@ -357,16 +372,11 @@ class MainWindow(QMainWindow):
         self.interface_media_btn = QPushButton(tr("Cấu hình slide nâng cao (từ file chương trình tổng)…"))
         self.interface_media_btn.clicked.connect(self.show_interface_media_dialog)
         interface_layout.addWidget(self.interface_media_btn)
-        left_layout.addWidget(self.interface_group)
+        interface_layout.addStretch(1)
+        self.left_tabs.addTab(self.interface_group, tr("Giao diện chương trình"))
 
-        left_container = QWidget()
-        left_container.setLayout(left_layout)
-        left_scroll = QScrollArea()
-        left_scroll.setWidget(left_container)
-        left_scroll.setWidgetResizable(True)
-        left_scroll.setFrameShape(QFrame.NoFrame)
-        left_scroll.setMinimumWidth(400)
-        body.addWidget(left_scroll, 2)
+        self.left_tabs.setMinimumWidth(400)
+        body.addWidget(self.left_tabs, 2)
 
         self.preview_group = QGroupBox(tr("Xem trước sân khấu"))
         preview_group_layout = QVBoxLayout(self.preview_group)
@@ -452,9 +462,9 @@ class MainWindow(QMainWindow):
         self.label_post_url.setText(tr("Link Post-test"))
         self.virtual_screen.setText(tr("Màn hình ảo (chế độ test)"))
         self.show_timer.setText(tr("Hiện đồng hồ đếm giờ trên sân khấu"))
-        self.info_group.setTitle(tr("Thông tin chương trình"))
-        self.speakers_group.setTitle(tr("Báo cáo viên"))
-        self.interface_group.setTitle(tr("Giao diện chương trình"))
+        self.left_tabs.setTabText(0, tr("Thông tin chương trình"))
+        self.left_tabs.setTabText(1, tr("Báo cáo viên"))
+        self.left_tabs.setTabText(2, tr("Giao diện chương trình"))
         self.preview_group.setTitle(tr("Xem trước sân khấu"))
         for button, key in self.toolbar_buttons:
             button.setText(tr(key))
