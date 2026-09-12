@@ -13,7 +13,6 @@ file PowerPoint tương ứng, màn hình chuyển tiếp, thảo luận, Post-t
 ## Chạy nhanh
 
 1. Giải nén toàn bộ thư mục.
-2. Nhấp đúp `run_windows.bat`.
 3. Lần đầu ứng dụng tự tạo `.venv` và cài thư viện, nên cần Internet và có thể mất vài phút.
 4. Nhập tên chương trình, chọn background/logo.
 5. Chọn **Thêm báo cáo viên**, nhập thông tin và gắn file PowerPoint.
