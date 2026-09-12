@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from core import Program
 from qr_utils import make_qr_pixmap
+from slide_export import resolve_scene_image
 
 
 class StageWindow(QWidget):
@@ -97,17 +98,20 @@ class StageWindow(QWidget):
 
     def set_program(self, program: Program):
         self.program = program
-        self.background_path = program.background
-        self.background = QPixmap(program.background) if program.background and Path(program.background).is_file() else QPixmap()
         if program.logo and Path(program.logo).is_file():
             pix = QPixmap(program.logo).scaled(300, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.logo.setPixmap(pix)
         else:
             self.logo.clear()
-        self.update()
+
+    def _apply_background_for_scene(self, scene_type: str) -> None:
+        path = resolve_scene_image(self.program, scene_type)
+        self.background_path = path
+        self.background = QPixmap(path) if path and Path(path).is_file() else QPixmap()
 
     def show_scene(self, scene: dict):
         self.scene = scene
+        self._apply_background_for_scene(scene["type"])
         self.photo.hide()
         self.qr.hide()
         self.kicker.setText(self.program.event_name)
@@ -144,6 +148,8 @@ class StageWindow(QWidget):
         else:
             self.title.setText(scene.get("title", ""))
             self.subtitle.setText(self.program.organizer)
+
+        self.update()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:

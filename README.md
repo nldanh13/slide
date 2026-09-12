@@ -157,6 +157,23 @@ Bấm **Mẫu chương trình…** để:
 
 Các mẫu được lưu dưới dạng file JSON trong thư mục `templates/` cạnh ứng dụng.
 
+## Dùng slide riêng (từ 1 file PowerPoint tổng) hoặc ảnh riêng cho từng phần
+
+Ngoài ảnh **Background** dùng chung mặc định, bấm **Cấu hình slide/ảnh riêng cho
+từng phần…** để tùy chỉnh riêng cho **Thảo luận**, **Post-test**, **Kết thúc** (và cả
+**Nền/Mở đầu** mặc định) theo 1 trong 2 cách:
+
+1. **Dùng slide có sẵn** — chọn 1 file PowerPoint "chương trình tổng" (có thể là file
+   thiết kế sẵn nhiều slide cho toàn bộ giao diện chương trình), rồi nhập số thứ tự
+   slide tương ứng cho từng phần. Ứng dụng tự mở PowerPoint (ẩn) để xuất slide đó ra
+   ảnh nền (cần cài Microsoft PowerPoint) — ảnh xuất ra được lưu cache trong thư mục
+   `slide_cache/` để không phải xuất lại nếu file gốc không đổi.
+2. **Dùng ảnh riêng** — nếu không có/không muốn dùng slide, chọn thẳng 1 file ảnh cho
+   phần đó.
+
+Nếu một phần không được cấu hình gì cả, ứng dụng tự rơi về dùng ảnh **Background**
+mặc định — không bắt buộc phải cấu hình đầy đủ cả 4 phần.
+
 ## Nhập nhiều file PowerPoint cùng lúc
 
 Thay vì bấm **+ Thêm báo cáo viên** từng người, bấm **Nhập nhiều file PowerPoint…** để

@@ -131,6 +131,25 @@ _TRANSLATIONS: dict[str, str] = {
     "Đã xuất lịch trình: {path}": "Schedule exported: {path}",
     "Chưa có báo cáo viên": "No speakers yet",
     "Quản lý chương trình ▾": "Manage program ▾",
+    # Slide/ảnh riêng cho từng phần
+    "Cấu hình slide/ảnh riêng cho từng phần…": "Configure per-section slide/image…",
+    "Slide / ảnh riêng cho từng phần": "Per-section slide / image",
+    "Chọn 1 file PowerPoint \"chương trình tổng\" rồi gán số thứ tự slide tương ứng "
+    "cho từng phần bên dưới — ứng dụng sẽ tự xuất slide đó thành ảnh nền (cần cài "
+    "Microsoft PowerPoint). Để trống (0) nghĩa là không dùng slide cho phần đó; khi "
+    "đó ứng dụng dùng ảnh riêng (nếu có) hoặc ảnh nền mặc định.": (
+        "Pick one \"master program\" PowerPoint file, then assign a slide number to "
+        "each section below — the app will export that slide as a background image "
+        "(requires Microsoft PowerPoint). Leave it at 0 to skip using a slide for that "
+        "section; the app then uses a dedicated image (if any) or the default background."
+    ),
+    "File chương trình tổng (PowerPoint)": "Master program file (PowerPoint)",
+    "Phần": "Section",
+    "Số slide": "Slide number",
+    "Ảnh riêng (nếu không dùng slide)": "Dedicated image (if not using a slide)",
+    "Không dùng": "Not used",
+    "Nền / Mở đầu (mặc định)": "Background / Opening (default)",
+    "(dùng ô \"Background\" ở màn hình chính)": "(use the \"Background\" field on the main screen)",
     "Sẵn sàng": "Ready",
     "Chưa chọn": "Not selected",
     "📡 Điều khiển từ xa: cổng {port}": "📡 Remote control: port {port}",

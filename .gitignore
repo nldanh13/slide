@@ -8,3 +8,4 @@ dist/
 *.spec
 templates/
 backups/
+slide_cache/

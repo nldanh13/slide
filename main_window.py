@@ -34,6 +34,7 @@ from core import Program, ProgramFileError, validate_program
 from dialogs import ReportDialog, RemoteDialog, choose_file
 from export_schedule import export_schedule_pdf
 from i18n import set_language, tr
+from interface_media_dialog import InterfaceMediaDialog
 from paths import app_dir
 from powerpoint import PowerPointController, PowerPointError
 from remote import RemoteControl
@@ -193,6 +194,10 @@ class MainWindow(QMainWindow):
         self.closing_ppt_clear_btn = QPushButton(tr("Xóa"))
         self.closing_ppt_clear_btn.clicked.connect(lambda: self.closing_ppt.clear())
         form.addWidget(self.closing_ppt_clear_btn, 7, 4)
+
+        self.interface_media_btn = QPushButton(tr("Cấu hình slide/ảnh riêng cho từng phần…"))
+        self.interface_media_btn.clicked.connect(self.show_interface_media_dialog)
+        form.addWidget(self.interface_media_btn, 8, 0, 1, 5)
         root.addLayout(form)
 
         toolbar = QHBoxLayout()
@@ -303,6 +308,7 @@ class MainWindow(QMainWindow):
             button.setText(tr("Chọn…"))
         for button in (self.opening_ppt_clear_btn, self.closing_ppt_clear_btn):
             button.setText(tr("Xóa"))
+        self.interface_media_btn.setText(tr("Cấu hình slide/ảnh riêng cho từng phần…"))
         for button, key in self.toolbar_buttons:
             button.setText(tr(key))
         self.table.setHorizontalHeaderLabels([tr(h) for h in self.table_headers])
@@ -577,6 +583,10 @@ class MainWindow(QMainWindow):
     def show_settings_dialog(self):
         dialog = SettingsDialog(self, self.settings, self.remote, self.screen)
         dialog.exec()
+
+    def show_interface_media_dialog(self):
+        self._sync_program()
+        InterfaceMediaDialog(self, self.program).exec()
 
     def _confirm(self, title: str, question: str) -> bool:
         return QMessageBox.question(self, title, question) == QMessageBox.Yes

@@ -135,6 +135,68 @@ class ValidateProgramTest(unittest.TestCase):
         errors = validate_program(program)
         self.assertTrue(any("kết thúc" in e for e in errors))
 
+    def test_slide_assigned_without_master_ppt_is_reported(self):
+        program = Program(
+            event_name="Hội nghị",
+            discussion_slide=3,
+            reports=[Report(name="A", topic="T", ppt=__file__)],
+        )
+        errors = validate_program(program)
+        self.assertTrue(any("file chương trình tổng" in e for e in errors))
+
+    def test_missing_master_ppt_is_reported(self):
+        program = Program(
+            event_name="Hội nghị",
+            master_ppt="khong_ton_tai.pptx",
+            discussion_slide=1,
+            reports=[Report(name="A", topic="T", ppt=__file__)],
+        )
+        errors = validate_program(program)
+        self.assertTrue(any("chương trình tổng" in e and "khong_ton_tai.pptx" in e for e in errors))
+
+    def test_missing_role_image_is_reported(self):
+        program = Program(
+            event_name="Hội nghị",
+            closing_image="khong_ton_tai.png",
+            reports=[Report(name="A", topic="T", ppt=__file__)],
+        )
+        errors = validate_program(program)
+        self.assertTrue(any("Kết thúc" in e and "khong_ton_tai.png" in e for e in errors))
+
+    def test_valid_with_existing_master_ppt_and_slides_has_no_extra_errors(self):
+        program = Program(
+            event_name="Hội nghị",
+            master_ppt=__file__,
+            background_slide=1,
+            discussion_slide=2,
+            reports=[Report(name="A", topic="T", ppt=__file__)],
+        )
+        errors = validate_program(program)
+        self.assertEqual(errors, [])
+
+
+class ProgramSlideHelpersTest(unittest.TestCase):
+    def test_slide_config_for_returns_empty_when_unset(self):
+        program = Program()
+        self.assertEqual(program.slide_config_for("background"), ("", 0))
+
+    def test_slide_config_for_returns_master_ppt_and_slide_number(self):
+        program = Program(master_ppt="master.pptx", discussion_slide=4)
+        self.assertEqual(program.slide_config_for("discussion"), ("master.pptx", 4))
+
+    def test_slide_config_for_ignores_slide_without_master_ppt(self):
+        program = Program(discussion_slide=4)
+        self.assertEqual(program.slide_config_for("discussion"), ("", 0))
+
+    def test_image_override_for_background_returns_background_field(self):
+        program = Program(background="bg.png")
+        self.assertEqual(program.image_override_for("background"), "bg.png")
+
+    def test_image_override_for_other_roles(self):
+        program = Program(post_test_image="pt.png")
+        self.assertEqual(program.image_override_for("post_test"), "pt.png")
+        self.assertEqual(program.image_override_for("closing"), "")
+
 
 if __name__ == "__main__":
     unittest.main()
