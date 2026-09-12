@@ -74,6 +74,24 @@ Khi trình chiếu thật (có máy chiếu/màn hình thứ 2), hãy **bỏ tic
 sân khấu hiển thị toàn màn hình như bình thường — mặc định ô này luôn tắt mỗi khi mở
 ứng dụng.
 
+## Cài đặt (⚙ Cài đặt…)
+
+Bấm nút **Cài đặt…** ở thanh dưới cùng để mở cửa sổ cấu hình gồm 3 tab:
+
+- **Ngôn ngữ** — chọn Tiếng Việt/English cho giao diện điều khiển. Áp dụng ngay lập
+  tức cho hầu hết nhãn; nội dung màn hình sân khấu (tên chương trình, tên báo cáo
+  viên...) vẫn hiển thị đúng như bạn nhập, không phụ thuộc ngôn ngữ giao diện.
+- **Cấu hình máy** — đổi cổng máy chủ điều khiển từ xa (mặc định 8765, đổi là khởi
+  động lại máy chủ ngay), chọn màn hình sân khấu mặc định, và mục **Kiểm tra hệ
+  thống** hiển thị số màn hình phát hiện được, thư viện điều khiển PowerPoint đã sẵn
+  sàng chưa, địa chỉ IP mạng nội bộ (để nối điều khiển từ xa) và phiên bản Python —
+  hữu ích khi cần chẩn đoán sự cố trước giờ diễn ra sự kiện.
+- **Hỗ trợ** — bảng phím tắt nhanh, nút mở file README này, và thông tin phiên bản
+  ứng dụng.
+
+Các lựa chọn được lưu vào file `app_settings.json` cạnh ứng dụng và tự áp dụng lại ở
+lần mở sau.
+
 ## Kiểm tra an toàn trước khi trình chiếu
 
 Khi bấm **BẮT ĐẦU**, ứng dụng kiểm tra và báo lỗi rõ ràng nếu: chưa nhập tên chương

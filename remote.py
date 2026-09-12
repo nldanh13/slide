@@ -9,6 +9,8 @@ from urllib.parse import parse_qs, urlparse
 
 from PySide6.QtCore import QObject, Signal
 
+from i18n import tr
+
 
 def local_ip() -> str:
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -43,25 +45,26 @@ PAGE_TEMPLATE = """<!doctype html>
 </style>
 </head>
 <body>
-<h1>ĐIỀU KHIỂN TỪ XA</h1>
-<div id="status">Đang kết nối…</div>
+<h1>{heading}</h1>
+<div id="status">{connecting}</div>
 <div class="grid">
-  <button id="prev">◀ Trước</button>
-  <button id="next">Tiếp ▶</button>
-  <button id="start">BẮT ĐẦU</button>
-  <button id="stop">KẾT THÚC</button>
+  <button id="prev">{prev_label}</button>
+  <button id="next">{next_label}</button>
+  <button id="start">{start_label}</button>
+  <button id="stop">{stop_label}</button>
 </div>
 <div class="msg" id="msg"></div>
 <script>
 const token = {token!r};
+const lostConnectionText = {lost_connection!r};
 async function send(action) {{
   const msg = document.getElementById('msg');
   try {{
     const res = await fetch(`/action/${{action}}?token=${{token}}`, {{ method: 'POST' }});
-    if (!res.ok) throw new Error('mã truy cập không hợp lệ');
+    if (!res.ok) throw new Error('invalid access token');
     msg.textContent = '';
   }} catch (err) {{
-    msg.textContent = 'Lỗi: ' + err.message;
+    msg.textContent = 'Error: ' + err.message;
   }}
   refreshStatus();
 }}
@@ -71,7 +74,7 @@ async function refreshStatus() {{
     const data = await res.json();
     document.getElementById('status').textContent = data.status;
   }} catch (err) {{
-    document.getElementById('status').textContent = 'Mất kết nối tới máy điều khiển';
+    document.getElementById('status').textContent = lostConnectionText;
   }}
 }}
 document.getElementById('prev').onclick = () => send('previous');
@@ -126,7 +129,16 @@ class RemoteControl(QObject):
                 parsed = urlparse(self.path)
                 query = parse_qs(parsed.query)
                 if parsed.path == "/":
-                    body = PAGE_TEMPLATE.format(token=control.token).encode("utf-8")
+                    body = PAGE_TEMPLATE.format(
+                        token=control.token,
+                        heading=tr("ĐIỀU KHIỂN TỪ XA"),
+                        connecting=tr("Đang kết nối…"),
+                        prev_label=tr("◀ Trước"),
+                        next_label=tr("Tiếp ▶"),
+                        start_label=tr("BẮT ĐẦU"),
+                        stop_label=tr("KẾT THÚC"),
+                        lost_connection=tr("Mất kết nối tới máy điều khiển"),
+                    ).encode("utf-8")
                     self.send_response(200)
                     self.send_header("Content-Type", "text/html; charset=utf-8")
                     self.send_header("Content-Length", str(len(body)))

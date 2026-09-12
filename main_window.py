@@ -26,8 +26,11 @@ from PySide6.QtWidgets import (
 
 from core import Program, ProgramFileError, validate_program
 from dialogs import ReportDialog, RemoteDialog, choose_file
+from i18n import set_language, tr
 from powerpoint import PowerPointController, PowerPointError
 from remote import RemoteControl
+from settings import AppSettings
+from settings_dialog import SettingsDialog
 from stage import StageWindow
 
 
@@ -60,7 +63,10 @@ SCENE_LABELS = {
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Điều khiển chương trình PowerPoint")
+        self.settings = AppSettings.load()
+        set_language(self.settings.language)
+
+        self.setWindowTitle(tr("Điều khiển chương trình PowerPoint"))
         self.resize(1180, 760)
         self.program = Program()
         self.program_path = ""
@@ -76,7 +82,7 @@ class MainWindow(QMainWindow):
         self.remote.previous_requested.connect(self.previous_scene)
         self.remote.start_requested.connect(self.start_show)
         self.remote.stop_requested.connect(self.stop_show)
-        self.remote.start()
+        self.remote.start(port=self.settings.remote_port)
 
         self._build_ui()
         self._build_shortcuts()
@@ -91,9 +97,9 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central)
         root = QVBoxLayout(central)
 
-        heading = QLabel("ĐIỀU KHIỂN CHƯƠNG TRÌNH")
-        heading.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        root.addWidget(heading)
+        self.heading = QLabel(tr("ĐIỀU KHIỂN CHƯƠNG TRÌNH"))
+        self.heading.setFont(QFont("Segoe UI", 20, QFont.Bold))
+        root.addWidget(self.heading)
 
         form = QGridLayout()
         self.event_name = QLineEdit(self.program.event_name)
@@ -107,36 +113,44 @@ class MainWindow(QMainWindow):
         self.screen = QComboBox()
         self._load_screens()
 
-        form.addWidget(QLabel("Tên chương trình"), 0, 0)
+        self.label_event_name = QLabel(tr("Tên chương trình"))
+        form.addWidget(self.label_event_name, 0, 0)
         form.addWidget(self.event_name, 0, 1, 1, 3)
-        form.addWidget(QLabel("Đơn vị tổ chức"), 1, 0)
+        self.label_organizer = QLabel(tr("Đơn vị tổ chức"))
+        form.addWidget(self.label_organizer, 1, 0)
         form.addWidget(self.organizer, 1, 1, 1, 3)
-        form.addWidget(QLabel("Background"), 2, 0)
+        self.label_background = QLabel(tr("Background"))
+        form.addWidget(self.label_background, 2, 0)
         form.addWidget(self.background, 2, 1)
-        bg_btn = QPushButton("Chọn ảnh…")
-        bg_btn.clicked.connect(lambda: self._set_path(self.background, "Ảnh (*.png *.jpg *.jpeg *.bmp)"))
-        form.addWidget(bg_btn, 2, 2)
-        form.addWidget(QLabel("Logo"), 3, 0)
+        self.bg_btn = QPushButton(tr("Chọn ảnh…"))
+        self.bg_btn.clicked.connect(lambda: self._set_path(self.background, "Ảnh (*.png *.jpg *.jpeg *.bmp)"))
+        form.addWidget(self.bg_btn, 2, 2)
+        self.label_logo = QLabel(tr("Logo"))
+        form.addWidget(self.label_logo, 3, 0)
         form.addWidget(self.logo, 3, 1)
-        logo_btn = QPushButton("Chọn logo…")
-        logo_btn.clicked.connect(lambda: self._set_path(self.logo, "Ảnh (*.png *.jpg *.jpeg)"))
-        form.addWidget(logo_btn, 3, 2)
-        form.addWidget(QLabel("Màn hình sân khấu"), 2, 3)
+        self.logo_btn = QPushButton(tr("Chọn logo…"))
+        self.logo_btn.clicked.connect(lambda: self._set_path(self.logo, "Ảnh (*.png *.jpg *.jpeg)"))
+        form.addWidget(self.logo_btn, 3, 2)
+        self.label_screen = QLabel(tr("Màn hình sân khấu"))
+        form.addWidget(self.label_screen, 2, 3)
         form.addWidget(self.screen, 2, 4)
-        form.addWidget(QLabel("Thảo luận (phút)"), 3, 3)
+        self.label_discussion = QLabel(tr("Thảo luận (phút)"))
+        form.addWidget(self.label_discussion, 3, 3)
         form.addWidget(self.discussion, 3, 4)
-        form.addWidget(QLabel("Link Post-test"), 4, 0)
+        self.label_post_url = QLabel(tr("Link Post-test"))
+        form.addWidget(self.label_post_url, 4, 0)
         form.addWidget(self.post_url, 4, 1, 1, 4)
-        self.virtual_screen = QCheckBox("Màn hình ảo (chỉ bật khi test, không có máy chiếu)")
-        self.virtual_screen.setToolTip(
+        self.virtual_screen = QCheckBox(tr("Màn hình ảo (chỉ bật khi test, không có máy chiếu)"))
+        self.virtual_screen.setToolTip(tr(
             "Khi bật: màn hình sân khấu hiện dưới dạng cửa sổ nhỏ để xem thử,\n"
             "không chiếm toàn màn hình — dùng khi không có máy chiếu/màn hình thứ 2 để test.\n"
             "Khi trình chiếu thật, hãy tắt mục này."
-        )
+        ))
         form.addWidget(self.virtual_screen, 5, 3, 1, 2)
         root.addLayout(form)
 
         toolbar = QHBoxLayout()
+        self.toolbar_buttons = []
         for text, slot in [
             ("+ Thêm báo cáo viên", self.add_report),
             ("Sửa", self.edit_report),
@@ -144,14 +158,16 @@ class MainWindow(QMainWindow):
             ("▲ Lên", lambda: self.move_report(-1)),
             ("▼ Xuống", lambda: self.move_report(1)),
         ]:
-            button = QPushButton(text)
+            button = QPushButton(tr(text))
             button.clicked.connect(slot)
             toolbar.addWidget(button)
+            self.toolbar_buttons.append((button, text))
         toolbar.addStretch()
         root.addLayout(toolbar)
 
         self.table = QTableWidget(0, 5)
-        self.table.setHorizontalHeaderLabels(["STT", "Báo cáo viên", "Chuyên đề", "File PowerPoint", "Phút"])
+        self.table_headers = ["STT", "Báo cáo viên", "Chuyên đề", "File PowerPoint", "Phút"]
+        self.table.setHorizontalHeaderLabels([tr(h) for h in self.table_headers])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
@@ -163,37 +179,72 @@ class MainWindow(QMainWindow):
         root.addWidget(self.table, 1)
 
         footer = QHBoxLayout()
-        load_btn = QPushButton("Mở chương trình")
-        load_btn.clicked.connect(self.load_program)
-        save_btn = QPushButton("Lưu chương trình")
-        save_btn.clicked.connect(self.save_program)
-        preview_btn = QPushButton("Xem thử màn hình")
-        preview_btn.clicked.connect(self.preview)
-        remote_btn = QPushButton("Điều khiển từ xa…")
-        remote_btn.clicked.connect(self.show_remote_dialog)
-        self.previous_btn = QPushButton("◀ Phần trước")
+        self.load_btn = QPushButton(tr("Mở chương trình"))
+        self.load_btn.clicked.connect(self.load_program)
+        self.save_btn = QPushButton(tr("Lưu chương trình"))
+        self.save_btn.clicked.connect(self.save_program)
+        self.preview_btn = QPushButton(tr("Xem thử màn hình"))
+        self.preview_btn.clicked.connect(self.preview)
+        self.remote_btn = QPushButton(tr("Điều khiển từ xa…"))
+        self.remote_btn.clicked.connect(self.show_remote_dialog)
+        self.settings_btn = QPushButton(tr("Cài đặt…"))
+        self.settings_btn.clicked.connect(self.show_settings_dialog)
+        self.previous_btn = QPushButton(tr("◀ Phần trước"))
         self.previous_btn.clicked.connect(self.previous_scene)
-        self.start_btn = QPushButton("BẮT ĐẦU")
+        self.start_btn = QPushButton(tr("BẮT ĐẦU"))
         self.start_btn.setObjectName("primary")
         self.start_btn.clicked.connect(self.start_show)
-        self.next_btn = QPushButton("Phần tiếp ▶")
+        self.next_btn = QPushButton(tr("Phần tiếp ▶"))
         self.next_btn.clicked.connect(self.next_scene)
-        stop_btn = QPushButton("KẾT THÚC")
-        stop_btn.setObjectName("danger")
-        stop_btn.clicked.connect(self.stop_show)
-        for button in [load_btn, save_btn, preview_btn, remote_btn, self.previous_btn, self.start_btn, self.next_btn, stop_btn]:
+        self.stop_btn = QPushButton(tr("KẾT THÚC"))
+        self.stop_btn.setObjectName("danger")
+        self.stop_btn.clicked.connect(self.stop_show)
+        for button in [
+            self.load_btn, self.save_btn, self.preview_btn, self.remote_btn, self.settings_btn,
+            self.previous_btn, self.start_btn, self.next_btn, self.stop_btn,
+        ]:
             footer.addWidget(button)
         root.addLayout(footer)
 
-        self.status = QLabel("Sẵn sàng")
+        self.status = QLabel(tr("Sẵn sàng"))
         self.statusBar().addWidget(self.status, 1)
-        self.remote_status = QLabel(self._remote_status_text())
+        self.remote_status = QLabel()
         self.remote_status.setStyleSheet("color: #64748b;")
+        self.refresh_remote_status()
         self.statusBar().addPermanentWidget(self.remote_status)
 
-    def _remote_status_text(self) -> str:
+    def refresh_remote_status(self) -> None:
         port = self.remote.server.server_address[1] if self.remote.server else None
-        return f"📡 Điều khiển từ xa: cổng {port}" if port else "📡 Điều khiển từ xa: chưa bật"
+        text = tr("📡 Điều khiển từ xa: cổng {port}").format(port=port) if port else tr("📡 Điều khiển từ xa: chưa bật")
+        self.remote_status.setText(text)
+
+    def retranslate_visible_texts(self) -> None:
+        """Cập nhật lại các nhãn tĩnh dễ thấy nhất sau khi đổi ngôn ngữ (không cần khởi động lại)."""
+        self.setWindowTitle(tr("Điều khiển chương trình PowerPoint"))
+        self.heading.setText(tr("ĐIỀU KHIỂN CHƯƠNG TRÌNH"))
+        self.label_event_name.setText(tr("Tên chương trình"))
+        self.label_organizer.setText(tr("Đơn vị tổ chức"))
+        self.label_background.setText(tr("Background"))
+        self.bg_btn.setText(tr("Chọn ảnh…"))
+        self.label_logo.setText(tr("Logo"))
+        self.logo_btn.setText(tr("Chọn logo…"))
+        self.label_screen.setText(tr("Màn hình sân khấu"))
+        self.label_discussion.setText(tr("Thảo luận (phút)"))
+        self.label_post_url.setText(tr("Link Post-test"))
+        self.virtual_screen.setText(tr("Màn hình ảo (chỉ bật khi test, không có máy chiếu)"))
+        for button, key in self.toolbar_buttons:
+            button.setText(tr(key))
+        self.table.setHorizontalHeaderLabels([tr(h) for h in self.table_headers])
+        self.load_btn.setText(tr("Mở chương trình"))
+        self.save_btn.setText(tr("Lưu chương trình"))
+        self.preview_btn.setText(tr("Xem thử màn hình"))
+        self.remote_btn.setText(tr("Điều khiển từ xa…"))
+        self.settings_btn.setText(tr("Cài đặt…"))
+        self.previous_btn.setText(tr("◀ Phần trước"))
+        self.start_btn.setText(tr("BẮT ĐẦU"))
+        self.next_btn.setText(tr("Phần tiếp ▶"))
+        self.stop_btn.setText(tr("KẾT THÚC"))
+        self.refresh_remote_status()
 
     def _build_shortcuts(self):
         for shortcut, slot in [
@@ -213,11 +264,14 @@ class MainWindow(QMainWindow):
         for index, screen in enumerate(screens, start=1):
             size = screen.geometry().size()
             self.screen.addItem(f"Màn hình {index} – {size.width()}×{size.height()}", screen)
-        if len(screens) > 1:
+        preferred = self.settings.preferred_screen_index
+        if 0 <= preferred < len(screens):
+            self.screen.setCurrentIndex(preferred)
+        elif len(screens) > 1:
             self.screen.setCurrentIndex(1)
 
     def _set_path(self, edit, file_filter):
-        value = choose_file(self, "Chọn file", file_filter)
+        value = choose_file(self, tr("Chọn file"), file_filter)
         if value:
             edit.setText(value)
 
@@ -241,7 +295,13 @@ class MainWindow(QMainWindow):
     def _refresh_table(self):
         self.table.setRowCount(len(self.program.reports))
         for row, report in enumerate(self.program.reports):
-            values = [str(row + 1), report.name, report.topic, Path(report.ppt).name if report.ppt else "Chưa chọn", str(report.duration_minutes)]
+            values = [
+                str(row + 1),
+                report.name,
+                report.topic,
+                Path(report.ppt).name if report.ppt else tr("Chưa chọn"),
+                str(report.duration_minutes),
+            ]
             for column, value in enumerate(values):
                 self.table.setItem(row, column, QTableWidgetItem(value))
 
@@ -267,7 +327,7 @@ class MainWindow(QMainWindow):
 
     def delete_report(self):
         row = self.selected_row()
-        if row >= 0 and QMessageBox.question(self, "Xóa", "Xóa báo cáo viên đang chọn?") == QMessageBox.Yes:
+        if row >= 0 and self._confirm(tr("Xóa"), tr("Xóa báo cáo viên đang chọn?")):
             del self.program.reports[row]
             self._refresh_table()
 
@@ -284,34 +344,34 @@ class MainWindow(QMainWindow):
         self._sync_program()
         path = self.program_path
         if not path:
-            path, _ = QFileDialog.getSaveFileName(self, "Lưu chương trình", "chuong_trinh.json", "JSON (*.json)")
+            path, _ = QFileDialog.getSaveFileName(self, tr("Lưu chương trình"), "chuong_trinh.json", "JSON (*.json)")
         if not path:
             return
         try:
             self.program.save(path)
         except ProgramFileError as exc:
-            QMessageBox.critical(self, "Không thể lưu", str(exc))
+            QMessageBox.critical(self, tr("Không thể lưu"), str(exc))
             return
         self.program_path = path
-        self.status.setText(f"Đã lưu: {path}")
+        self.status.setText(tr("Đã lưu: {path}").format(path=path))
 
     def load_program(self):
         if self.program.reports and not self._confirm(
-            "Mở chương trình khác",
-            "Dữ liệu báo cáo viên hiện tại chưa được lưu sẽ bị thay thế. Tiếp tục?",
+            tr("Mở chương trình khác"),
+            tr("Dữ liệu báo cáo viên hiện tại chưa được lưu sẽ bị thay thế. Tiếp tục?"),
         ):
             return
-        path, _ = QFileDialog.getOpenFileName(self, "Mở chương trình", "", "JSON (*.json)")
+        path, _ = QFileDialog.getOpenFileName(self, tr("Mở chương trình"), "", "JSON (*.json)")
         if not path:
             return
         try:
             self.program = Program.load(path)
         except ProgramFileError as exc:
-            QMessageBox.critical(self, "Không thể mở", str(exc))
+            QMessageBox.critical(self, tr("Không thể mở"), str(exc))
             return
         self.program_path = path
         self._load_form()
-        self.status.setText(f"Đã mở: {path}")
+        self.status.setText(tr("Đã mở: {path}").format(path=path))
 
     def _show_stage(self):
         screen = self.screen.currentData()
@@ -320,14 +380,14 @@ class MainWindow(QMainWindow):
         self.stage.set_program(self.program)
         if self.virtual_screen.isChecked():
             self.stage.set_simulation_mode(True)
-            self.stage.setWindowTitle("Màn hình sân khấu (ẢO – chỉ dùng để test)")
+            self.stage.setWindowTitle(tr("Màn hình sân khấu (ẢO – chỉ dùng để test)"))
             self.stage.resize(960, 540)
             geometry = screen.geometry()
             self.stage.move(geometry.x() + 40, geometry.y() + 40)
             self.stage.show()
         else:
             self.stage.set_simulation_mode(False)
-            self.stage.setWindowTitle("Màn hình trình chiếu")
+            self.stage.setWindowTitle(tr("Màn hình trình chiếu"))
             self.stage.setGeometry(screen.geometry())
             self.stage.showFullScreen()
         self.stage.raise_()
@@ -341,18 +401,22 @@ class MainWindow(QMainWindow):
         dialog = RemoteDialog(self, self.remote)
         dialog.exec()
 
+    def show_settings_dialog(self):
+        dialog = SettingsDialog(self, self.settings, self.remote, self.screen)
+        dialog.exec()
+
     def _confirm(self, title: str, question: str) -> bool:
         return QMessageBox.question(self, title, question) == QMessageBox.Yes
 
     def start_show(self):
         if self.scenes and not self._confirm(
-            "Bắt đầu lại", "Chương trình đang chạy. Bắt đầu lại từ đầu?"
+            tr("Bắt đầu lại"), tr("Chương trình đang chạy. Bắt đầu lại từ đầu?")
         ):
             return
         self._sync_program()
         errors = validate_program(self.program)
         if errors:
-            QMessageBox.warning(self, "Chưa thể trình chiếu", "\n".join(errors))
+            QMessageBox.warning(self, tr("Chưa thể trình chiếu"), "\n".join(errors))
             return
         self.scenes = self.program.scenes()
         self.scene_index = 0
@@ -362,8 +426,10 @@ class MainWindow(QMainWindow):
         if not (0 <= self.scene_index < len(self.scenes)):
             return
         scene = self.scenes[self.scene_index]
-        label = SCENE_LABELS.get(scene["type"], scene["type"])
-        status_text = f"Phần {self.scene_index + 1}/{len(self.scenes)} – {label}"
+        label = tr(SCENE_LABELS.get(scene["type"], scene["type"]))
+        status_text = tr("Phần {index}/{total} – {label}").format(
+            index=self.scene_index + 1, total=len(self.scenes), label=label
+        )
         self.status.setText(status_text)
         self.remote.set_status(status_text)
         if scene["type"] == "powerpoint":
@@ -372,7 +438,7 @@ class MainWindow(QMainWindow):
             try:
                 self.ppt.start(scene["report"].ppt)
             except PowerPointError as exc:
-                QMessageBox.critical(self, "Lỗi PowerPoint", str(exc))
+                QMessageBox.critical(self, tr("Lỗi PowerPoint"), str(exc))
                 self._show_stage()
                 self.stage.show_scene({"type": "transition", "title": "KHÔNG THỂ MỞ BÀI TRÌNH CHIẾU", "report": scene["report"]})
         else:
@@ -408,7 +474,7 @@ class MainWindow(QMainWindow):
 
     def stop_show(self):
         if self.scenes and not self._confirm(
-            "Kết thúc trình chiếu", "Bạn có chắc muốn kết thúc trình chiếu hiện tại?"
+            tr("Kết thúc trình chiếu"), tr("Bạn có chắc muốn kết thúc trình chiếu hiện tại?")
         ):
             return
         self.ppt_seen_running = False
@@ -416,12 +482,12 @@ class MainWindow(QMainWindow):
         self.stage.hide()
         self.scenes = []
         self.scene_index = -1
-        self.status.setText("Đã kết thúc trình chiếu")
-        self.remote.set_status("Đã kết thúc trình chiếu")
+        self.status.setText(tr("Đã kết thúc trình chiếu"))
+        self.remote.set_status(tr("Đã kết thúc trình chiếu"))
 
     def closeEvent(self, event):
         if self.scenes and not self._confirm(
-            "Đóng ứng dụng", "Chương trình đang trình chiếu. Đóng ứng dụng sẽ dừng toàn bộ. Tiếp tục?"
+            tr("Đóng ứng dụng"), tr("Chương trình đang trình chiếu. Đóng ứng dụng sẽ dừng toàn bộ. Tiếp tục?")
         ):
             event.ignore()
             return
