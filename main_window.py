@@ -81,6 +81,7 @@ class MainWindow(QMainWindow):
         self.scene_index = -1
         self.ppt = PowerPointController()
         self.ppt_seen_running = False
+        self._pending_ppt_hide_stage = False
         self.stage = StageWindow()
         self.stage.escape_requested.connect(self.stop_show)
         self.timer_overlay = TimerOverlay()
@@ -99,7 +100,7 @@ class MainWindow(QMainWindow):
 
         self.monitor = QTimer(self)
         self.monitor.timeout.connect(self._monitor_powerpoint)
-        self.monitor.start(400)
+        self.monitor.start(150)
 
         self.autosave_timer = QTimer(self)
         self.autosave_timer.timeout.connect(self._autosave)
@@ -565,15 +566,20 @@ class MainWindow(QMainWindow):
         self.remote.set_status(status_text)
         self._update_timer_overlay(scene)
         if scene["type"] == "powerpoint":
-            self.stage.hide()
+            # Giữ màn hình sân khấu hiển thị (không hide() ngay) trong lúc PowerPoint đang mở —
+            # chỉ ẩn đi khi PowerPoint đã thật sự chạy (xem _monitor_powerpoint), để tránh
+            # lộ desktop trong khoảng trống giữa lúc ẩn app và lúc PowerPoint kịp toàn màn hình.
             self.ppt_seen_running = False
+            self._pending_ppt_hide_stage = True
             try:
                 self.ppt.start(scene["report"].ppt)
             except PowerPointError as exc:
+                self._pending_ppt_hide_stage = False
                 QMessageBox.critical(self, tr("Lỗi PowerPoint"), str(exc))
                 self._show_stage()
                 self.stage.show_scene({"type": "transition", "title": "KHÔNG THỂ MỞ BÀI TRÌNH CHIẾU", "report": scene["report"]})
         else:
+            self._pending_ppt_hide_stage = False
             self._show_stage()
             self.stage.show_scene(scene)
 
@@ -594,30 +600,45 @@ class MainWindow(QMainWindow):
         else:
             self.timer_overlay.stop()
 
+    def _prepare_stage_for_scene(self, scene: dict) -> None:
+        """Hiện sẵn nội dung của scene sắp tới lên màn hình sân khấu trước khi đóng
+        PowerPoint hiện tại, để lúc PowerPoint đóng thì bên dưới đã là app thay vì desktop."""
+        if scene["type"] == "powerpoint":
+            return
+        self._pending_ppt_hide_stage = False
+        self._show_stage()
+        self.stage.show_scene(scene)
+        QApplication.processEvents()
+
     def next_scene(self):
-        if not self.scenes:
+        if not self.scenes or self.scene_index >= len(self.scenes) - 1:
             return
         if self.ppt.is_running():
+            self._prepare_stage_for_scene(self.scenes[self.scene_index + 1])
             self.ppt.close_presentation()
-        if self.scene_index < len(self.scenes) - 1:
-            self.scene_index += 1
-            self._show_current_scene()
+        self.scene_index += 1
+        self._show_current_scene()
 
     def previous_scene(self):
-        if not self.scenes:
+        if not self.scenes or self.scene_index <= 0:
             return
         if self.ppt.is_running():
+            self._prepare_stage_for_scene(self.scenes[self.scene_index - 1])
             self.ppt.close_presentation()
-        if self.scene_index > 0:
-            self.scene_index -= 1
-            self._show_current_scene()
+        self.scene_index -= 1
+        self._show_current_scene()
 
     def _monitor_powerpoint(self):
         running = self.ppt.is_running()
         if running:
+            if self._pending_ppt_hide_stage:
+                self.stage.hide()
+                self._pending_ppt_hide_stage = False
             self.ppt_seen_running = True
         elif self.ppt_seen_running:
             self.ppt_seen_running = False
+            if self.scene_index < len(self.scenes) - 1:
+                self._prepare_stage_for_scene(self.scenes[self.scene_index + 1])
             self.ppt.close_presentation()
             self.next_scene()
 
@@ -627,6 +648,7 @@ class MainWindow(QMainWindow):
         ):
             return
         self.ppt_seen_running = False
+        self._pending_ppt_hide_stage = False
         self.ppt.close_presentation()
         self.stage.hide()
         self.timer_overlay.stop()

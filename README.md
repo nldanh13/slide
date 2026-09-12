@@ -36,6 +36,15 @@ Có thể mở `sample_program.json` để xem cấu trúc dữ liệu mẫu.
 
 Khi kết thúc PowerPoint bằng `Esc`, ứng dụng tự đóng bài đó và chuyển sang background.
 
+**Giảm nháy màn hình khi chuyển bài:** trước khi đóng PowerPoint của báo cáo viên hiện
+tại, ứng dụng hiện sẵn màn hình nền (background) với nội dung của phần kế tiếp lên
+trước, rồi mới đóng PowerPoint — nhờ vậy lúc PowerPoint đóng, phía dưới đã là màn hình
+của ứng dụng thay vì màn hình desktop trần trụi. Tương tự, khi mở PowerPoint mới, màn
+hình nền vẫn giữ nguyên cho tới khi PowerPoint thật sự đã chạy mới ẩn đi. Đây là hạn chế
+tự nhiên khi chuyển đổi giữa 2 ứng dụng toàn màn hình khác nhau trên Windows nên không
+thể mượt 100% như chuyển slide trong cùng một PowerPoint, nhưng khoảng lộ desktop được
+rút ngắn tối đa.
+
 ## Phím tắt
 
 - `F5`: bắt đầu chương trình.
