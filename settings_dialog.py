@@ -84,7 +84,7 @@ class SettingsDialog(QDialog):
             "Áp dụng ngay lập tức. Nhãn có sẵn trên màn hình có thể cần mở lại cửa sổ để cập nhật hết."
         ))
         note.setWordWrap(True)
-        note.setStyleSheet("color: #64748b; font-size: 9pt;")
+        note.setStyleSheet("color: #9aa3b2; font-size: 9pt;")
 
         layout.addWidget(description)
         layout.addLayout(form)
@@ -119,7 +119,7 @@ class SettingsDialog(QDialog):
             "(mọi mã QR/đường dẫn cũ sẽ không dùng được nữa)."
         ))
         port_note.setWordWrap(True)
-        port_note.setStyleSheet("color: #64748b; font-size: 9pt;")
+        port_note.setStyleSheet("color: #9aa3b2; font-size: 9pt;")
 
         self.default_screen_combo = QComboBox()
         self.default_screen_combo.addItem(tr("Tự động (ưu tiên màn hình phụ)"), -1)

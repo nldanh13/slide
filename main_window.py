@@ -49,31 +49,80 @@ AUTOSAVE_INTERVAL_MS = 30_000
 
 
 APP_STYLE = """
-QWidget { font-family: "Segoe UI"; font-size: 10pt; color: #162033; background: #f4f7fb; }
-QMainWindow, QDialog { background: #f4f7fb; }
-QLineEdit, QSpinBox, QComboBox, QTableWidget {
-    background: white; border: 1px solid #ccd5e2; border-radius: 6px; padding: 6px;
+QWidget { font-family: "Segoe UI"; font-size: 10pt; color: #e6e9ef; background: #1b1d23; }
+QMainWindow, QDialog { background: #1b1d23; }
+QLabel { background: transparent; }
+QToolTip { background: #2a2d36; color: #e6e9ef; border: 1px solid #3b3f4a; padding: 4px 8px; }
+
+QLineEdit, QSpinBox, QComboBox {
+    background: #23262e; color: #e6e9ef; border: 1px solid #3b3f4a; border-radius: 6px; padding: 6px;
+    selection-background-color: #3b82f6;
 }
-QTableWidget { gridline-color: #e5eaf1; }
-QHeaderView::section { background: #e8eef7; padding: 8px; border: 0; font-weight: 600; }
-QPushButton { background: #e6edf7; border: 0; border-radius: 7px; padding: 8px 14px; }
-QPushButton:hover { background: #d8e3f3; }
-QPushButton#primary { background: #075985; color: white; font-weight: 700; }
-QPushButton#primary:hover { background: #0369a1; }
-QPushButton#danger { background: #fee2e2; color: #991b1b; }
-QMenu { background: #ffffff; color: #162033; border: 1px solid #ccd5e2; }
+QLineEdit:focus, QSpinBox:focus, QComboBox:focus { border: 1px solid #3b82f6; }
+QLineEdit:disabled, QSpinBox:disabled, QComboBox:disabled { color: #6b7280; background: #202329; }
+QComboBox::drop-down { border: 0; width: 22px; }
+QComboBox QAbstractItemView {
+    background: #23262e; color: #e6e9ef; border: 1px solid #3b3f4a;
+    selection-background-color: #3b82f6; selection-color: #ffffff; outline: 0;
+}
+
+QTableWidget {
+    background: #23262e; color: #e6e9ef; border: 1px solid #30343d; border-radius: 6px;
+    gridline-color: #30343d; alternate-background-color: #262a33;
+}
+QTableWidget::item { padding: 3px; }
+QTableWidget::item:selected { background: #3b82f6; color: #ffffff; }
+QHeaderView::section {
+    background: #2a2d36; color: #9aa3b2; padding: 8px; border: 0;
+    border-bottom: 1px solid #3b3f4a; font-weight: 600;
+}
+QTableCornerButton::section { background: #2a2d36; border: 0; }
+
+QPushButton {
+    background: #2a2d36; color: #e6e9ef; border: 1px solid #3b3f4a; border-radius: 7px; padding: 8px 14px;
+}
+QPushButton:hover { background: #32363f; border: 1px solid #4a4f5c; }
+QPushButton:pressed { background: #23262e; }
+QPushButton:disabled { color: #6b7280; background: #23262e; border: 1px solid #2e323b; }
+QPushButton#primary { background: #3b82f6; color: #ffffff; font-weight: 700; border: 0; }
+QPushButton#primary:hover { background: #2563eb; }
+QPushButton#primary:pressed { background: #1d4ed8; }
+QPushButton#danger { background: #3a2426; color: #f87171; border: 1px solid #5b2c2f; }
+QPushButton#danger:hover { background: #482a2d; }
+QPushButton#iconSmall { padding: 4px 8px; min-width: 0; }
+
+QMenu { background: #23262e; color: #e6e9ef; border: 1px solid #3b3f4a; }
 QMenu::item { padding: 6px 24px; background: transparent; }
-QMenu::item:selected { background: #d8e3f3; }
-QMenu::separator { height: 1px; background: #e5eaf1; margin: 4px 0; }
+QMenu::item:selected { background: #3b82f6; color: #ffffff; }
+QMenu::separator { height: 1px; background: #3b3f4a; margin: 4px 0; }
+
 QGroupBox {
-    border: 1px solid #dbe3ee; border-radius: 8px; margin-top: 14px;
-    padding: 14px 10px 10px 10px; font-weight: 600; background: #ffffff;
+    border: 1px solid #30343d; border-radius: 8px; margin-top: 14px;
+    padding: 14px 10px 10px 10px; font-weight: 600; background: #202329;
 }
 QGroupBox::title {
     subcontrol-origin: margin; subcontrol-position: top left;
-    left: 10px; padding: 0 6px; color: #075985; background: #f4f7fb;
+    left: 10px; padding: 0 6px; color: #60a5fa; background: #1b1d23;
 }
-QPushButton#iconSmall { padding: 4px 8px; min-width: 0; }
+
+QCheckBox { spacing: 8px; background: transparent; }
+QCheckBox::indicator {
+    width: 16px; height: 16px; border-radius: 4px; border: 1px solid #4a4f5c; background: #23262e;
+}
+QCheckBox::indicator:hover { border: 1px solid #6b7280; }
+QCheckBox::indicator:checked { background: #3b82f6; border: 1px solid #3b82f6; }
+
+QStatusBar { background: #17181d; color: #9aa3b2; border-top: 1px solid #30343d; }
+QStatusBar::item { border: 0; }
+
+QScrollBar:vertical { background: #1b1d23; width: 12px; margin: 0; }
+QScrollBar::handle:vertical { background: #3b3f4a; border-radius: 5px; min-height: 24px; }
+QScrollBar::handle:vertical:hover { background: #4a4f5c; }
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
+QScrollBar:horizontal { background: #1b1d23; height: 12px; margin: 0; }
+QScrollBar::handle:horizontal { background: #3b3f4a; border-radius: 5px; min-width: 24px; }
+QScrollBar::handle:horizontal:hover { background: #4a4f5c; }
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; }
 """
 
 SCENE_LABELS = {
@@ -226,6 +275,7 @@ class MainWindow(QMainWindow):
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.setDragDropMode(QTableWidget.InternalMove)
         self.table.setDragDropOverwriteMode(False)
+        self.table.setAlternatingRowColors(True)
         self.table.doubleClicked.connect(self.edit_report)
         self.table.model().rowsMoved.connect(self._on_rows_dragged)
         speakers_layout.addWidget(self.table, 1)
@@ -243,9 +293,8 @@ class MainWindow(QMainWindow):
         self.interface_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
         self.interface_table.setSelectionMode(QTableWidget.NoSelection)
         self.interface_table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.interface_table.verticalHeader().setDefaultSectionSize(30)
-        self.interface_table.setMinimumHeight(240)
-        self.interface_table.setMaximumHeight(240)
+        self.interface_table.setAlternatingRowColors(True)
+        self.interface_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self._interface_action_widgets = []
         for row, (field, label_key, kind) in enumerate(INTERFACE_SLOTS):
             label_item = QTableWidgetItem(tr(label_key))
@@ -271,6 +320,7 @@ class MainWindow(QMainWindow):
             self.interface_table.setCellWidget(row, 2, action_box)
             self._interface_action_widgets.append((choose_btn, clear_btn))
         self._refresh_interface_table()
+        self._size_interface_table()
         interface_layout.addWidget(self.interface_table)
 
         self.interface_media_btn = QPushButton(tr("Cấu hình slide nâng cao (từ file chương trình tổng)…"))
@@ -325,7 +375,7 @@ class MainWindow(QMainWindow):
         self.status = QLabel(tr("Sẵn sàng"))
         self.statusBar().addWidget(self.status, 1)
         self.remote_status = QLabel()
-        self.remote_status.setStyleSheet("color: #64748b;")
+        self.remote_status.setStyleSheet("color: #9aa3b2;")
         self.refresh_remote_status()
         self.statusBar().addPermanentWidget(self.remote_status)
 
@@ -444,6 +494,17 @@ class MainWindow(QMainWindow):
             value = getattr(self.program, field)
             text = Path(value).name if value else tr("Chưa chọn")
             self.interface_table.item(row, 1).setText(text)
+
+    def _size_interface_table(self) -> None:
+        """Đặt chiều cao bảng vừa đủ để luôn thấy hết các dòng. Tính động theo
+        chiều cao dòng/tiêu đề thực tế thay vì số cố định, vì font và DPI khác
+        nhau giữa các máy Windows có thể làm dòng bị cắt nếu dùng số cứng."""
+        table = self.interface_table
+        table.resizeRowsToContents()
+        total = table.horizontalHeader().height() + 2 * table.frameWidth()
+        for row in range(table.rowCount()):
+            total += table.rowHeight(row)
+        table.setFixedHeight(total + 4)
 
     def _choose_interface_file(self, field: str, kind: str):
         file_filter = PPT_FILTER if kind == "ppt" else IMAGE_FILTER

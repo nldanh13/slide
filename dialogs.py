@@ -122,7 +122,7 @@ class RemoteDialog(QDialog):
             "Khởi động lại ứng dụng sẽ tạo mã truy cập mới."
         ))
         note.setWordWrap(True)
-        note.setStyleSheet("color: #64748b; font-size: 9pt;")
+        note.setStyleSheet("color: #9aa3b2; font-size: 9pt;")
 
         buttons = QDialogButtonBox(QDialogButtonBox.Close)
         buttons.button(QDialogButtonBox.Close).setText(tr("Đóng"))
