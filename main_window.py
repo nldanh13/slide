@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
     QGridLayout,
+    QGroupBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -64,6 +65,15 @@ QMenu { background: #ffffff; color: #162033; border: 1px solid #ccd5e2; }
 QMenu::item { padding: 6px 24px; background: transparent; }
 QMenu::item:selected { background: #d8e3f3; }
 QMenu::separator { height: 1px; background: #e5eaf1; margin: 4px 0; }
+QGroupBox {
+    border: 1px solid #dbe3ee; border-radius: 8px; margin-top: 14px;
+    padding: 14px 10px 10px 10px; font-weight: 600; background: #ffffff;
+}
+QGroupBox::title {
+    subcontrol-origin: margin; subcontrol-position: top left;
+    left: 10px; padding: 0 6px; color: #075985; background: #f4f7fb;
+}
+QPushButton#iconSmall { padding: 4px 8px; min-width: 0; }
 """
 
 SCENE_LABELS = {
@@ -139,7 +149,8 @@ class MainWindow(QMainWindow):
         self.heading.setFont(QFont("Segoe UI", 20, QFont.Bold))
         root.addWidget(self.heading)
 
-        form = QGridLayout()
+        self.info_group = QGroupBox(tr("Thông tin chương trình"))
+        form = QGridLayout(self.info_group)
         self.event_name = QLineEdit(self.program.event_name)
         self.organizer = QLineEdit()
         self.logo = QLineEdit()
@@ -181,7 +192,10 @@ class MainWindow(QMainWindow):
         self.show_timer = QCheckBox(tr("Hiện đồng hồ đếm giờ trên sân khấu"))
         self.show_timer.setChecked(True)
         form.addWidget(self.show_timer, 5, 2, 1, 3)
-        root.addLayout(form)
+        root.addWidget(self.info_group)
+
+        self.speakers_group = QGroupBox(tr("Báo cáo viên"))
+        speakers_layout = QVBoxLayout(self.speakers_group)
 
         toolbar = QHBoxLayout()
         self.toolbar_buttons = []
@@ -197,7 +211,7 @@ class MainWindow(QMainWindow):
             toolbar.addWidget(button)
             self.toolbar_buttons.append((button, text))
         toolbar.addStretch()
-        root.addLayout(toolbar)
+        speakers_layout.addLayout(toolbar)
 
         self.table = QTableWidget(0, 5)
         self.table_headers = ["STT", "Báo cáo viên", "Chuyên đề", "File PowerPoint", "Phút"]
@@ -214,11 +228,11 @@ class MainWindow(QMainWindow):
         self.table.setDragDropOverwriteMode(False)
         self.table.doubleClicked.connect(self.edit_report)
         self.table.model().rowsMoved.connect(self._on_rows_dragged)
-        root.addWidget(self.table, 1)
+        speakers_layout.addWidget(self.table, 1)
+        root.addWidget(self.speakers_group, 1)
 
-        self.interface_heading = QLabel(tr("Giao diện chương trình"))
-        self.interface_heading.setFont(QFont("Segoe UI", 11, QFont.Bold))
-        root.addWidget(self.interface_heading)
+        self.interface_group = QGroupBox(tr("Giao diện chương trình"))
+        interface_layout = QVBoxLayout(self.interface_group)
 
         self.interface_table = QTableWidget(len(INTERFACE_SLOTS), 3)
         self.interface_headers = ["Phần", "File", ""]
@@ -229,9 +243,9 @@ class MainWindow(QMainWindow):
         self.interface_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
         self.interface_table.setSelectionMode(QTableWidget.NoSelection)
         self.interface_table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.interface_table.verticalHeader().setDefaultSectionSize(28)
-        self.interface_table.setMinimumHeight(230)
-        self.interface_table.setMaximumHeight(230)
+        self.interface_table.verticalHeader().setDefaultSectionSize(30)
+        self.interface_table.setMinimumHeight(240)
+        self.interface_table.setMaximumHeight(240)
         self._interface_action_widgets = []
         for row, (field, label_key, kind) in enumerate(INTERFACE_SLOTS):
             label_item = QTableWidgetItem(tr(label_key))
@@ -241,22 +255,28 @@ class MainWindow(QMainWindow):
             action_box = QWidget()
             action_row = QHBoxLayout(action_box)
             action_row.setContentsMargins(4, 2, 4, 2)
+            action_row.setSpacing(4)
             choose_btn = QPushButton(tr("Chọn…"))
+            choose_btn.setMinimumWidth(78)
             choose_btn.clicked.connect(
                 lambda _checked=False, f=field, k=kind: self._choose_interface_file(f, k)
             )
-            clear_btn = QPushButton(tr("Xóa"))
+            clear_btn = QPushButton("✕")
+            clear_btn.setObjectName("iconSmall")
+            clear_btn.setFixedWidth(28)
+            clear_btn.setToolTip(tr("Xóa"))
             clear_btn.clicked.connect(lambda _checked=False, f=field: self._clear_interface_file(f))
             action_row.addWidget(choose_btn)
             action_row.addWidget(clear_btn)
             self.interface_table.setCellWidget(row, 2, action_box)
             self._interface_action_widgets.append((choose_btn, clear_btn))
         self._refresh_interface_table()
-        root.addWidget(self.interface_table)
+        interface_layout.addWidget(self.interface_table)
 
         self.interface_media_btn = QPushButton(tr("Cấu hình slide nâng cao (từ file chương trình tổng)…"))
         self.interface_media_btn.clicked.connect(self.show_interface_media_dialog)
-        root.addWidget(self.interface_media_btn)
+        interface_layout.addWidget(self.interface_media_btn)
+        root.addWidget(self.interface_group)
 
         footer = QHBoxLayout()
         self.file_menu_btn = QPushButton(tr("Quản lý chương trình ▾"))
@@ -275,12 +295,16 @@ class MainWindow(QMainWindow):
         self.export_pdf_action.triggered.connect(self.export_schedule)
         self.file_menu_btn.setMenu(file_menu)
 
-        self.preview_btn = QPushButton(tr("Xem thử màn hình"))
-        self.preview_btn.clicked.connect(self.preview)
-        self.remote_btn = QPushButton(tr("Điều khiển từ xa…"))
-        self.remote_btn.clicked.connect(self.show_remote_dialog)
-        self.settings_btn = QPushButton(tr("Cài đặt…"))
-        self.settings_btn.clicked.connect(self.show_settings_dialog)
+        self.tools_menu_btn = QPushButton(tr("Công cụ ▾"))
+        tools_menu = QMenu(self.tools_menu_btn)
+        self.preview_action = tools_menu.addAction(tr("Xem thử màn hình"))
+        self.preview_action.triggered.connect(self.preview)
+        self.remote_action = tools_menu.addAction(tr("Điều khiển từ xa…"))
+        self.remote_action.triggered.connect(self.show_remote_dialog)
+        self.settings_action = tools_menu.addAction(tr("Cài đặt…"))
+        self.settings_action.triggered.connect(self.show_settings_dialog)
+        self.tools_menu_btn.setMenu(tools_menu)
+
         self.previous_btn = QPushButton(tr("◀ Phần trước"))
         self.previous_btn.clicked.connect(self.previous_scene)
         self.start_btn = QPushButton(tr("BẮT ĐẦU"))
@@ -292,8 +316,7 @@ class MainWindow(QMainWindow):
         self.stop_btn.setObjectName("danger")
         self.stop_btn.clicked.connect(self.stop_show)
         for button in [
-            self.file_menu_btn,
-            self.preview_btn, self.remote_btn, self.settings_btn,
+            self.file_menu_btn, self.tools_menu_btn,
             self.previous_btn, self.start_btn, self.next_btn, self.stop_btn,
         ]:
             footer.addWidget(button)
@@ -324,16 +347,18 @@ class MainWindow(QMainWindow):
         self.label_post_url.setText(tr("Link Post-test"))
         self.virtual_screen.setText(tr("Màn hình ảo (chỉ bật khi test, không có máy chiếu)"))
         self.show_timer.setText(tr("Hiện đồng hồ đếm giờ trên sân khấu"))
+        self.info_group.setTitle(tr("Thông tin chương trình"))
+        self.speakers_group.setTitle(tr("Báo cáo viên"))
+        self.interface_group.setTitle(tr("Giao diện chương trình"))
         for button, key in self.toolbar_buttons:
             button.setText(tr(key))
         self.table.setHorizontalHeaderLabels([tr(h) for h in self.table_headers])
-        self.interface_heading.setText(tr("Giao diện chương trình"))
         self.interface_table.setHorizontalHeaderLabels([tr(h) for h in self.interface_headers])
         for row, (_field, label_key, _kind) in enumerate(INTERFACE_SLOTS):
             self.interface_table.item(row, 0).setText(tr(label_key))
         for choose_btn, clear_btn in self._interface_action_widgets:
             choose_btn.setText(tr("Chọn…"))
-            clear_btn.setText(tr("Xóa"))
+            clear_btn.setToolTip(tr("Xóa"))
         self._refresh_interface_table()
         self.interface_media_btn.setText(tr("Cấu hình slide nâng cao (từ file chương trình tổng)…"))
         self.file_menu_btn.setText(tr("Quản lý chương trình ▾"))
@@ -342,9 +367,10 @@ class MainWindow(QMainWindow):
         self.backup_action.setText(tr("Khôi phục sao lưu…"))
         self.template_action.setText(tr("Mẫu chương trình…"))
         self.export_pdf_action.setText(tr("Xuất lịch trình (PDF)…"))
-        self.preview_btn.setText(tr("Xem thử màn hình"))
-        self.remote_btn.setText(tr("Điều khiển từ xa…"))
-        self.settings_btn.setText(tr("Cài đặt…"))
+        self.tools_menu_btn.setText(tr("Công cụ ▾"))
+        self.preview_action.setText(tr("Xem thử màn hình"))
+        self.remote_action.setText(tr("Điều khiển từ xa…"))
+        self.settings_action.setText(tr("Cài đặt…"))
         self.previous_btn.setText(tr("◀ Phần trước"))
         self.start_btn.setText(tr("BẮT ĐẦU"))
         self.next_btn.setText(tr("Phần tiếp ▶"))

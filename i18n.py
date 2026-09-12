@@ -275,6 +275,9 @@ _TRANSLATIONS: dict[str, str] = {
         "Imported {count} file(s) — check the assigned role in the table below, "
         "click Edit to fill in the remaining details."
     ),
+    # Nhóm khung + menu Công cụ
+    "Thông tin chương trình": "Program information",
+    "Công cụ ▾": "Tools ▾",
 }
 
 
