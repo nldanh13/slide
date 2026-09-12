@@ -123,6 +123,19 @@ chuyển sang màu đỏ và hiện dấu `-` khi đã quá giờ. Có thể t�
 Ngoài 2 nút **▲ Lên / ▼ Xuống**, bạn có thể kéo-thả trực tiếp một dòng trong bảng báo
 cáo viên để đổi thứ tự trình bày — thứ tự (cột STT) sẽ tự cập nhật ngay.
 
+## Sao lưu tự động khi lưu
+
+Mỗi lần bấm **Lưu chương trình** thành công, ứng dụng tự giữ thêm một bản sao lưu có
+đánh dấu ngày giờ trong thư mục `backups/` cạnh ứng dụng (giữ tối đa 30 bản gần nhất
+cho mỗi file). Nếu chỉnh sửa nhầm hoặc lưu đè mất dữ liệu cũ, bấm **Khôi phục sao
+lưu…** để xem danh sách và tải lại phiên bản trước đó.
+
+## Xuất lịch trình ra file PDF
+
+Bấm **Xuất lịch trình (PDF)…** để xuất danh sách báo cáo viên (tên, đơn vị, chuyên đề,
+thời lượng) và thời gian thảo luận thành 1 file PDF gọn gàng — tiện in phát cho ban tổ
+chức, MC hoặc bảo vệ mà không cần mở ứng dụng để xem lịch.
+
 ## Mẫu chương trình dựng sẵn
 
 Bấm **Mẫu chương trình…** để:

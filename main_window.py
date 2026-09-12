@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer
@@ -24,10 +25,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from backup_dialog import BackupDialog
+from backups import create_backup
 from bulk_import import BulkImportDialog
 from template_dialog import TemplateDialog
 from core import Program, ProgramFileError, validate_program
 from dialogs import ReportDialog, RemoteDialog, choose_file
+from export_schedule import export_schedule_pdf
 from i18n import set_language, tr
 from paths import app_dir
 from powerpoint import PowerPointController, PowerPointError
@@ -229,8 +233,12 @@ class MainWindow(QMainWindow):
         self.load_btn.clicked.connect(self.load_program)
         self.save_btn = QPushButton(tr("Lưu chương trình"))
         self.save_btn.clicked.connect(self.save_program)
+        self.backup_btn = QPushButton(tr("Khôi phục sao lưu…"))
+        self.backup_btn.clicked.connect(self.show_backup_dialog)
         self.template_btn = QPushButton(tr("Mẫu chương trình…"))
         self.template_btn.clicked.connect(self.show_template_dialog)
+        self.export_pdf_btn = QPushButton(tr("Xuất lịch trình (PDF)…"))
+        self.export_pdf_btn.clicked.connect(self.export_schedule)
         self.preview_btn = QPushButton(tr("Xem thử màn hình"))
         self.preview_btn.clicked.connect(self.preview)
         self.remote_btn = QPushButton(tr("Điều khiển từ xa…"))
@@ -248,7 +256,8 @@ class MainWindow(QMainWindow):
         self.stop_btn.setObjectName("danger")
         self.stop_btn.clicked.connect(self.stop_show)
         for button in [
-            self.load_btn, self.save_btn, self.template_btn, self.preview_btn, self.remote_btn, self.settings_btn,
+            self.load_btn, self.save_btn, self.backup_btn, self.template_btn, self.export_pdf_btn,
+            self.preview_btn, self.remote_btn, self.settings_btn,
             self.previous_btn, self.start_btn, self.next_btn, self.stop_btn,
         ]:
             footer.addWidget(button)
@@ -292,7 +301,9 @@ class MainWindow(QMainWindow):
         self.table.setHorizontalHeaderLabels([tr(h) for h in self.table_headers])
         self.load_btn.setText(tr("Mở chương trình"))
         self.save_btn.setText(tr("Lưu chương trình"))
+        self.backup_btn.setText(tr("Khôi phục sao lưu…"))
         self.template_btn.setText(tr("Mẫu chương trình…"))
+        self.export_pdf_btn.setText(tr("Xuất lịch trình (PDF)…"))
         self.preview_btn.setText(tr("Xem thử màn hình"))
         self.remote_btn.setText(tr("Điều khiển từ xa…"))
         self.settings_btn.setText(tr("Cài đặt…"))
@@ -473,6 +484,7 @@ class MainWindow(QMainWindow):
             return
         self.program_path = path
         self._clear_autosave()
+        create_backup(path)
         self.status.setText(tr("Đã lưu: {path}").format(path=path))
 
     def load_program(self):
@@ -494,15 +506,37 @@ class MainWindow(QMainWindow):
         self._clear_autosave()
         self.status.setText(tr("Đã mở: {path}").format(path=path))
 
+    def _apply_loaded_program(self, program: Program, status_text: str) -> None:
+        self.program = program
+        self.program_path = ""
+        self._load_form()
+        self._clear_autosave()
+        self.status.setText(status_text)
+
     def show_template_dialog(self):
         self._sync_program()
         dialog = TemplateDialog(self, self.program)
         if dialog.exec() and dialog.loaded_program is not None:
-            self.program = dialog.loaded_program
-            self.program_path = ""
-            self._load_form()
-            self._clear_autosave()
-            self.status.setText(tr("Đã tải mẫu chương trình."))
+            self._apply_loaded_program(dialog.loaded_program, tr("Đã tải mẫu chương trình."))
+
+    def show_backup_dialog(self):
+        dialog = BackupDialog(self)
+        if dialog.exec() and dialog.loaded_program is not None:
+            self._apply_loaded_program(dialog.loaded_program, tr("Đã khôi phục bản sao lưu."))
+
+    def export_schedule(self):
+        self._sync_program()
+        safe_name = re.sub(r'[\\/:*?"<>|]', "_", self.program.event_name).strip()
+        default_name = f"lich_trinh_{safe_name}.pdf" if safe_name else "lich_trinh.pdf"
+        path, _ = QFileDialog.getSaveFileName(self, tr("Xuất lịch trình (PDF)"), default_name, "PDF (*.pdf)")
+        if not path:
+            return
+        try:
+            export_schedule_pdf(self.program, path)
+        except ProgramFileError as exc:
+            QMessageBox.critical(self, tr("Không thể xuất PDF"), str(exc))
+            return
+        self.status.setText(tr("Đã xuất lịch trình: {path}").format(path=path))
 
     def _show_stage(self):
         screen = self.screen.currentData()

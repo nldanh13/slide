@@ -112,6 +112,24 @@ _TRANSLATIONS: dict[str, str] = {
         "The speaker is still presenting. Ending now will close their presentation "
         "immediately. Are you sure?"
     ),
+    # Sao lưu có phiên bản
+    "Khôi phục sao lưu…": "Restore backup…",
+    "Khôi phục bản sao lưu": "Restore a backup",
+    "Mỗi lần bấm Lưu chương trình, ứng dụng tự giữ thêm một bản sao lưu có "
+    "ngày giờ. Chọn một bản bên dưới để khôi phục nếu chỉnh sửa nhầm.": (
+        "Every time you click Save Program, the app keeps an extra dated backup "
+        "copy. Pick one below to restore it if you edited something by mistake."
+    ),
+    "Khôi phục bản đã chọn": "Restore selected backup",
+    "Mở thư mục sao lưu": "Open backups folder",
+    "Không thể khôi phục": "Could not restore",
+    "Đã khôi phục bản sao lưu.": "Backup restored.",
+    # Xuất PDF
+    "Xuất lịch trình (PDF)…": "Export schedule (PDF)…",
+    "Xuất lịch trình (PDF)": "Export schedule (PDF)",
+    "Không thể xuất PDF": "Could not export PDF",
+    "Đã xuất lịch trình: {path}": "Schedule exported: {path}",
+    "Chưa có báo cáo viên": "No speakers yet",
     "Sẵn sàng": "Ready",
     "Chưa chọn": "Not selected",
     "📡 Điều khiển từ xa: cổng {port}": "📡 Remote control: port {port}",
