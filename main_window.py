@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QFont, QKeySequence
 from PySide6.QtWidgets import (
     QApplication,
@@ -27,11 +27,16 @@ from PySide6.QtWidgets import (
 from core import Program, ProgramFileError, validate_program
 from dialogs import ReportDialog, RemoteDialog, choose_file
 from i18n import set_language, tr
+from paths import app_dir
 from powerpoint import PowerPointController, PowerPointError
 from remote import RemoteControl
 from settings import AppSettings
 from settings_dialog import SettingsDialog
 from stage import StageWindow
+from timer_overlay import TimerOverlay
+
+AUTOSAVE_PATH = app_dir() / "autosave.json"
+AUTOSAVE_INTERVAL_MS = 30_000
 
 
 APP_STYLE = """
@@ -76,6 +81,7 @@ class MainWindow(QMainWindow):
         self.ppt_seen_running = False
         self.stage = StageWindow()
         self.stage.escape_requested.connect(self.stop_show)
+        self.timer_overlay = TimerOverlay()
 
         self.remote = RemoteControl()
         self.remote.next_requested.connect(self.next_scene)
@@ -87,10 +93,15 @@ class MainWindow(QMainWindow):
         self._build_ui()
         self._build_shortcuts()
         self._refresh_table()
+        self._offer_autosave_recovery()
 
         self.monitor = QTimer(self)
         self.monitor.timeout.connect(self._monitor_powerpoint)
         self.monitor.start(400)
+
+        self.autosave_timer = QTimer(self)
+        self.autosave_timer.timeout.connect(self._autosave)
+        self.autosave_timer.start(AUTOSAVE_INTERVAL_MS)
 
     def _build_ui(self):
         central = QWidget()
@@ -147,6 +158,9 @@ class MainWindow(QMainWindow):
             "Khi trình chiếu thật, hãy tắt mục này."
         ))
         form.addWidget(self.virtual_screen, 5, 3, 1, 2)
+        self.show_timer = QCheckBox(tr("Hiện đồng hồ đếm giờ trên sân khấu"))
+        self.show_timer.setChecked(True)
+        form.addWidget(self.show_timer, 5, 0, 1, 3)
         root.addLayout(form)
 
         toolbar = QHBoxLayout()
@@ -174,8 +188,12 @@ class MainWindow(QMainWindow):
         self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table.setSelectionMode(QTableWidget.SingleSelection)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table.setDragDropMode(QTableWidget.InternalMove)
+        self.table.setDragDropOverwriteMode(False)
         self.table.doubleClicked.connect(self.edit_report)
+        self.table.model().rowsMoved.connect(self._on_rows_dragged)
         root.addWidget(self.table, 1)
 
         footer = QHBoxLayout()
@@ -232,6 +250,7 @@ class MainWindow(QMainWindow):
         self.label_discussion.setText(tr("Thảo luận (phút)"))
         self.label_post_url.setText(tr("Link Post-test"))
         self.virtual_screen.setText(tr("Màn hình ảo (chỉ bật khi test, không có máy chiếu)"))
+        self.show_timer.setText(tr("Hiện đồng hồ đếm giờ trên sân khấu"))
         for button, key in self.toolbar_buttons:
             button.setText(tr(key))
         self.table.setHorizontalHeaderLabels([tr(h) for h in self.table_headers])
@@ -303,11 +322,26 @@ class MainWindow(QMainWindow):
                 str(report.duration_minutes),
             ]
             for column, value in enumerate(values):
-                self.table.setItem(row, column, QTableWidgetItem(value))
+                item = QTableWidgetItem(value)
+                if column == 0:
+                    item.setData(Qt.UserRole, report)
+                self.table.setItem(row, column, item)
 
     def selected_row(self):
         rows = self.table.selectionModel().selectedRows()
         return rows[0].row() if rows else -1
+
+    def _on_rows_dragged(self, *_args):
+        """Đồng bộ lại thứ tự self.program.reports sau khi người dùng kéo-thả đổi vị trí dòng."""
+        new_order = []
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            report = item.data(Qt.UserRole) if item else None
+            if report is not None:
+                new_order.append(report)
+        if len(new_order) == len(self.program.reports):
+            self.program.reports = new_order
+        self._refresh_table()
 
     def add_report(self):
         dialog = ReportDialog(self)
@@ -340,6 +374,39 @@ class MainWindow(QMainWindow):
         self._refresh_table()
         self.table.selectRow(target)
 
+    def _offer_autosave_recovery(self):
+        if not AUTOSAVE_PATH.is_file():
+            return
+        try:
+            recovered = Program.load(str(AUTOSAVE_PATH))
+        except ProgramFileError:
+            AUTOSAVE_PATH.unlink(missing_ok=True)
+            return
+        if not self._confirm(
+            tr("Khôi phục dữ liệu"),
+            tr(
+                "Phát hiện dữ liệu tự động lưu từ lần chạy trước (có thể do ứng dụng bị đóng "
+                "đột ngột). Khôi phục lại chương trình đó?"
+            ),
+        ):
+            AUTOSAVE_PATH.unlink(missing_ok=True)
+            return
+        self.program = recovered
+        self._load_form()
+        self.status.setText(tr("Đã khôi phục dữ liệu tự động lưu."))
+
+    def _autosave(self):
+        self._sync_program()
+        if not self.program.event_name.strip() and not self.program.reports:
+            return
+        try:
+            self.program.save(str(AUTOSAVE_PATH))
+        except ProgramFileError:
+            pass
+
+    def _clear_autosave(self):
+        AUTOSAVE_PATH.unlink(missing_ok=True)
+
     def save_program(self):
         self._sync_program()
         path = self.program_path
@@ -353,6 +420,7 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, tr("Không thể lưu"), str(exc))
             return
         self.program_path = path
+        self._clear_autosave()
         self.status.setText(tr("Đã lưu: {path}").format(path=path))
 
     def load_program(self):
@@ -371,6 +439,7 @@ class MainWindow(QMainWindow):
             return
         self.program_path = path
         self._load_form()
+        self._clear_autosave()
         self.status.setText(tr("Đã mở: {path}").format(path=path))
 
     def _show_stage(self):
@@ -420,6 +489,7 @@ class MainWindow(QMainWindow):
             return
         self.scenes = self.program.scenes()
         self.scene_index = 0
+        self._autosave()
         self._show_current_scene()
 
     def _show_current_scene(self):
@@ -432,6 +502,7 @@ class MainWindow(QMainWindow):
         )
         self.status.setText(status_text)
         self.remote.set_status(status_text)
+        self._update_timer_overlay(scene)
         if scene["type"] == "powerpoint":
             self.stage.hide()
             self.ppt_seen_running = False
@@ -444,6 +515,18 @@ class MainWindow(QMainWindow):
         else:
             self._show_stage()
             self.stage.show_scene(scene)
+
+    def _update_timer_overlay(self, scene: dict) -> None:
+        if not self.show_timer.isChecked():
+            self.timer_overlay.stop()
+            return
+        screen = self.screen.currentData() or QApplication.primaryScreen()
+        if scene["type"] == "powerpoint":
+            self.timer_overlay.start(scene["report"].duration_minutes, screen.geometry())
+        elif scene["type"] == "discussion":
+            self.timer_overlay.start(scene["duration_minutes"], screen.geometry())
+        else:
+            self.timer_overlay.stop()
 
     def next_scene(self):
         if not self.scenes:
@@ -480,6 +563,7 @@ class MainWindow(QMainWindow):
         self.ppt_seen_running = False
         self.ppt.close_presentation()
         self.stage.hide()
+        self.timer_overlay.stop()
         self.scenes = []
         self.scene_index = -1
         self.status.setText(tr("Đã kết thúc trình chiếu"))
@@ -492,6 +576,8 @@ class MainWindow(QMainWindow):
             event.ignore()
             return
         self.stage.close()
+        self.timer_overlay.close()
         self.ppt.shutdown()
         self.remote.stop()
+        self._clear_autosave()
         event.accept()

@@ -3,10 +3,11 @@ from __future__ import annotations
 import json
 import dataclasses
 from dataclasses import asdict, dataclass
-from pathlib import Path
 
-SETTINGS_PATH = Path(__file__).resolve().parent / "app_settings.json"
-APP_VERSION = "1.1.0"
+from paths import app_dir
+
+SETTINGS_PATH = app_dir() / "app_settings.json"
+APP_VERSION = "1.2.0"
 
 
 @dataclass

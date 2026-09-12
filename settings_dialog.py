@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QDesktopServices
@@ -21,10 +20,11 @@ from PySide6.QtWidgets import (
 )
 
 from i18n import LANGUAGES, get_language, set_language, tr
+from paths import app_dir
 from remote import RemoteControl, local_ip
 from settings import APP_VERSION, AppSettings
 
-README_PATH = Path(__file__).resolve().parent / "README.md"
+README_PATH = app_dir() / "README.md"
 
 
 def _powerpoint_library_available() -> bool:

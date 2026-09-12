@@ -4,7 +4,7 @@ import unittest
 import urllib.error
 import urllib.request
 
-from PySide6.QtCore import QCoreApplication
+from PySide6.QtWidgets import QApplication
 
 from remote import RemoteControl
 
@@ -12,7 +12,7 @@ from remote import RemoteControl
 class RemoteControlTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.app = QCoreApplication.instance() or QCoreApplication([])
+        cls.app = QApplication.instance() or QApplication([])
 
     def setUp(self):
         self.remote = RemoteControl()

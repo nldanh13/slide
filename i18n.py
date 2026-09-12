@@ -48,6 +48,14 @@ _TRANSLATIONS: dict[str, str] = {
     "Cài đặt…": "Settings…",
     "Màn hình sân khấu (ẢO – chỉ dùng để test)": "Stage screen (VIRTUAL – test only)",
     "Màn hình trình chiếu": "Stage screen",
+    "Hiện đồng hồ đếm giờ trên sân khấu": "Show countdown timer on stage screen",
+    "Khôi phục dữ liệu": "Recover data",
+    "Phát hiện dữ liệu tự động lưu từ lần chạy trước (có thể do ứng dụng bị đóng "
+    "đột ngột). Khôi phục lại chương trình đó?": (
+        "Found auto-saved data from a previous run (the app may have closed "
+        "unexpectedly). Restore that program?"
+    ),
+    "Đã khôi phục dữ liệu tự động lưu.": "Auto-saved data restored.",
     "Sẵn sàng": "Ready",
     "Chưa chọn": "Not selected",
     "📡 Điều khiển từ xa: cổng {port}": "📡 Remote control: port {port}",

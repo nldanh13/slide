@@ -92,6 +92,44 @@ Bấm nút **Cài đặt…** ở thanh dưới cùng để mở cửa sổ cấ
 Các lựa chọn được lưu vào file `app_settings.json` cạnh ứng dụng và tự áp dụng lại ở
 lần mở sau.
 
+## Tự động lưu & khôi phục
+
+Ứng dụng tự động lưu bản nháp chương trình mỗi 30 giây (và ngay trước khi bấm **BẮT
+ĐẦU**) vào file `autosave.json` cạnh ứng dụng. Nếu app hoặc máy tính gặp sự cố giữa
+sự kiện và bạn phải mở lại ứng dụng, lần mở tiếp theo sẽ hỏi khôi phục lại bản nháp
+đó. Sau khi **Lưu chương trình** hoặc **Mở chương trình** thành công, bản tự động lưu
+cũ sẽ được xóa vì đã có file chính thức thay thế; đóng ứng dụng bình thường cũng tự
+xóa file này.
+
+## Đồng hồ đếm giờ trên sân khấu
+
+Khi báo cáo viên đang trình bày PowerPoint hoặc trong phần thảo luận, một đồng hồ đếm
+ngược nhỏ (luôn nổi trên cùng) sẽ hiện ở góc màn hình sân khấu theo đúng thời lượng dự
+kiến đã khai báo cho từng báo cáo viên (hoặc thời lượng thảo luận chung). Đồng hồ
+chuyển sang màu đỏ và hiện dấu `-` khi đã quá giờ. Có thể tắt bằng cách bỏ tick ô
+**"Hiện đồng hồ đếm giờ trên sân khấu"**.
+
+## Kéo-thả sắp xếp báo cáo viên
+
+Ngoài 2 nút **▲ Lên / ▼ Xuống**, bạn có thể kéo-thả trực tiếp một dòng trong bảng báo
+cáo viên để đổi thứ tự trình bày — thứ tự (cột STT) sẽ tự cập nhật ngay.
+
+## Đóng gói thành file .exe (không cần cài Python)
+
+Nếu muốn đưa ứng dụng cho người khác dùng mà không cần cài Python/thư viện, chạy file
+`build_exe.bat` **trên máy Windows** (không build được từ máy khác vì cần đúng
+`pywin32` của Windows):
+
+```powershell
+build_exe.bat
+```
+
+Script sẽ cài `pyinstaller`, cài các thư viện trong `requirements.txt`, rồi đóng gói
+thành `dist\PPT_Event_Controller.exe`. Copy file `.exe` đó vào cùng thư mục với
+`README.md` và `sample_program.json` để phân phối — `app_settings.json` và
+`autosave.json` sẽ tự tạo cạnh file `.exe` khi chạy, y hệt như khi chạy bằng
+`python main.py`.
+
 ## Kiểm tra an toàn trước khi trình chiếu
 
 Khi bấm **BẮT ĐẦU**, ứng dụng kiểm tra và báo lỗi rõ ràng nếu: chưa nhập tên chương
