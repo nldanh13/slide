@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from core import Program, Report
+from core import Program, ProgramFileError, Report, validate_program
 
 
 class ProgramTest(unittest.TestCase):
@@ -17,6 +17,13 @@ class ProgramTest(unittest.TestCase):
             ],
         )
 
+    def test_scene_order_with_no_reports(self):
+        program = Program(reports=[])
+        self.assertEqual(
+            [scene["type"] for scene in program.scenes()],
+            ["opening", "discussion", "post_test", "closing"],
+        )
+
     def test_round_trip_json(self):
         program = Program(event_name="Hội nghị", reports=[Report(name="Báo cáo viên")])
         with tempfile.TemporaryDirectory() as folder:
@@ -25,6 +32,67 @@ class ProgramTest(unittest.TestCase):
             loaded = Program.load(str(path))
         self.assertEqual(loaded.event_name, "Hội nghị")
         self.assertEqual(loaded.reports[0].name, "Báo cáo viên")
+
+    def test_load_missing_file_raises_program_file_error(self):
+        with tempfile.TemporaryDirectory() as folder:
+            with self.assertRaises(ProgramFileError):
+                Program.load(str(Path(folder) / "khong_ton_tai.json"))
+
+    def test_load_malformed_json_raises_program_file_error(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "bad.json"
+            path.write_text("{khong phai json hop le", encoding="utf-8")
+            with self.assertRaises(ProgramFileError):
+                Program.load(str(path))
+
+    def test_load_unknown_field_raises_program_file_error(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "bad.json"
+            path.write_text('{"truong_khong_ton_tai": 1, "reports": []}', encoding="utf-8")
+            with self.assertRaises(ProgramFileError):
+                Program.load(str(path))
+
+
+class ValidateProgramTest(unittest.TestCase):
+    def test_valid_program_has_no_errors(self):
+        program = Program(
+            event_name="Hội nghị",
+            reports=[Report(name="A", topic="Chuyên đề", ppt=__file__)],
+        )
+        self.assertEqual(validate_program(program), [])
+
+    def test_missing_event_name(self):
+        program = Program(event_name="", reports=[Report(name="A", topic="T", ppt=__file__)])
+        self.assertIn("Chưa nhập tên chương trình.", validate_program(program))
+
+    def test_no_reports(self):
+        program = Program(event_name="Hội nghị", reports=[])
+        self.assertIn("Chưa có báo cáo viên.", validate_program(program))
+
+    def test_missing_ppt_file_is_reported(self):
+        program = Program(
+            event_name="Hội nghị",
+            reports=[Report(name="A", topic="T", ppt="khong_ton_tai.pptx")],
+        )
+        errors = validate_program(program)
+        self.assertTrue(any("không tìm thấy" in e for e in errors))
+
+    def test_missing_background_is_reported(self):
+        program = Program(
+            event_name="Hội nghị",
+            background="khong_ton_tai.png",
+            reports=[Report(name="A", topic="T", ppt=__file__)],
+        )
+        errors = validate_program(program)
+        self.assertTrue(any("ảnh nền" in e for e in errors))
+
+    def test_missing_speaker_photo_is_reported(self):
+        program = Program(
+            event_name="Hội nghị",
+            reports=[Report(name="A", topic="T", ppt=__file__, photo="khong_ton_tai.png")],
+        )
+        errors = validate_program(program)
+        self.assertTrue(any("khong_ton_tai.png" in e for e in errors))
 
 
 if __name__ == "__main__":

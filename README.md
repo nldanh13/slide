@@ -74,6 +74,16 @@ Khi trình chiếu thật (có máy chiếu/màn hình thứ 2), hãy **bỏ tic
 sân khấu hiển thị toàn màn hình như bình thường — mặc định ô này luôn tắt mỗi khi mở
 ứng dụng.
 
+## Kiểm tra an toàn trước khi trình chiếu
+
+Khi bấm **BẮT ĐẦU**, ứng dụng kiểm tra và báo lỗi rõ ràng nếu: chưa nhập tên chương
+trình, chưa có báo cáo viên, thiếu tên/chuyên đề, chưa chọn (hoặc không tìm thấy) file
+PowerPoint, hoặc không tìm thấy ảnh nền/logo/ảnh báo cáo viên đã khai báo.
+
+Ứng dụng cũng hỏi xác nhận trước các thao tác có thể ảnh hưởng đến chương trình đang
+chạy: bắt đầu lại từ đầu khi đang trình chiếu, kết thúc trình chiếu, đóng ứng dụng khi
+đang chạy, hoặc mở một chương trình khác khi dữ liệu hiện tại chưa lưu.
+
 ## Lưu ý màn hình PowerPoint
 
 PowerPoint dùng màn hình trình chiếu đã chọn trong chính PowerPoint. Trước chương trình,

@@ -165,7 +165,12 @@ class RemoteControl(QObject):
                     self.send_response(404)
                     self.end_headers()
                     return
-                signal.emit()
+                try:
+                    signal.emit()
+                except Exception:
+                    self.send_response(500)
+                    self.end_headers()
+                    return
                 self.send_response(204)
                 self.end_headers()
 
