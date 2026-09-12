@@ -48,7 +48,7 @@ AUTOSAVE_INTERVAL_MS = 30_000
 
 
 APP_STYLE = """
-QWidget { font-family: "Segoe UI"; font-size: 10pt; color: #162033; }
+QWidget { font-family: "Segoe UI"; font-size: 10pt; color: #162033; background: #f4f7fb; }
 QMainWindow, QDialog { background: #f4f7fb; }
 QLineEdit, QSpinBox, QComboBox, QTableWidget {
     background: white; border: 1px solid #ccd5e2; border-radius: 6px; padding: 6px;
