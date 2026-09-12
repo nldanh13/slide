@@ -616,6 +616,10 @@ class MainWindow(QMainWindow):
         if self.ppt.is_running():
             self._prepare_stage_for_scene(self.scenes[self.scene_index + 1])
             self.ppt.close_presentation()
+            # Vừa chủ động đóng PowerPoint theo lệnh người dùng — không phải do báo cáo
+            # viên tự thoát — nên phải hủy cờ này, tránh _monitor_powerpoint hiểu nhầm
+            # thành "PowerPoint vừa tự kết thúc" và tự ý bấm tiếp thêm 1 lần nữa.
+            self.ppt_seen_running = False
         self.scene_index += 1
         self._show_current_scene()
 
@@ -625,6 +629,7 @@ class MainWindow(QMainWindow):
         if self.ppt.is_running():
             self._prepare_stage_for_scene(self.scenes[self.scene_index - 1])
             self.ppt.close_presentation()
+            self.ppt_seen_running = False
         self.scene_index -= 1
         self._show_current_scene()
 
