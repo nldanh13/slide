@@ -1,0 +1,27 @@
+{
+  "event_name": "HỘI NGHỊ KHOA HỌC",
+  "organizer": "Đơn vị tổ chức",
+  "background": "",
+  "logo": "",
+  "discussion_minutes": 20,
+  "post_test_url": "",
+  "reports": [
+    {
+      "name": "BS.CKI Nguyễn Văn A",
+      "department": "Khoa Ngoại CTCH – TK",
+      "topic": "Tên chuyên đề báo cáo thứ nhất",
+      "photo": "",
+      "ppt": "",
+      "duration_minutes": 15
+    },
+    {
+      "name": "ThS.BS Trần Văn B",
+      "department": "Đơn vị công tác",
+      "topic": "Tên chuyên đề báo cáo thứ hai",
+      "photo": "",
+      "ppt": "",
+      "duration_minutes": 15
+    }
+  ]
+}
+
