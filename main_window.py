@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMainWindow,
+    QMenu,
     QMessageBox,
     QPushButton,
     QSpinBox,
@@ -229,16 +230,22 @@ class MainWindow(QMainWindow):
         root.addWidget(self.table, 1)
 
         footer = QHBoxLayout()
-        self.load_btn = QPushButton(tr("Mở chương trình"))
-        self.load_btn.clicked.connect(self.load_program)
-        self.save_btn = QPushButton(tr("Lưu chương trình"))
-        self.save_btn.clicked.connect(self.save_program)
-        self.backup_btn = QPushButton(tr("Khôi phục sao lưu…"))
-        self.backup_btn.clicked.connect(self.show_backup_dialog)
-        self.template_btn = QPushButton(tr("Mẫu chương trình…"))
-        self.template_btn.clicked.connect(self.show_template_dialog)
-        self.export_pdf_btn = QPushButton(tr("Xuất lịch trình (PDF)…"))
-        self.export_pdf_btn.clicked.connect(self.export_schedule)
+        self.file_menu_btn = QPushButton(tr("Quản lý chương trình ▾"))
+        file_menu = QMenu(self.file_menu_btn)
+        self.load_action = file_menu.addAction(tr("Mở chương trình"))
+        self.load_action.triggered.connect(self.load_program)
+        self.save_action = file_menu.addAction(tr("Lưu chương trình"))
+        self.save_action.triggered.connect(self.save_program)
+        file_menu.addSeparator()
+        self.backup_action = file_menu.addAction(tr("Khôi phục sao lưu…"))
+        self.backup_action.triggered.connect(self.show_backup_dialog)
+        self.template_action = file_menu.addAction(tr("Mẫu chương trình…"))
+        self.template_action.triggered.connect(self.show_template_dialog)
+        file_menu.addSeparator()
+        self.export_pdf_action = file_menu.addAction(tr("Xuất lịch trình (PDF)…"))
+        self.export_pdf_action.triggered.connect(self.export_schedule)
+        self.file_menu_btn.setMenu(file_menu)
+
         self.preview_btn = QPushButton(tr("Xem thử màn hình"))
         self.preview_btn.clicked.connect(self.preview)
         self.remote_btn = QPushButton(tr("Điều khiển từ xa…"))
@@ -256,7 +263,7 @@ class MainWindow(QMainWindow):
         self.stop_btn.setObjectName("danger")
         self.stop_btn.clicked.connect(self.stop_show)
         for button in [
-            self.load_btn, self.save_btn, self.backup_btn, self.template_btn, self.export_pdf_btn,
+            self.file_menu_btn,
             self.preview_btn, self.remote_btn, self.settings_btn,
             self.previous_btn, self.start_btn, self.next_btn, self.stop_btn,
         ]:
@@ -299,11 +306,12 @@ class MainWindow(QMainWindow):
         for button, key in self.toolbar_buttons:
             button.setText(tr(key))
         self.table.setHorizontalHeaderLabels([tr(h) for h in self.table_headers])
-        self.load_btn.setText(tr("Mở chương trình"))
-        self.save_btn.setText(tr("Lưu chương trình"))
-        self.backup_btn.setText(tr("Khôi phục sao lưu…"))
-        self.template_btn.setText(tr("Mẫu chương trình…"))
-        self.export_pdf_btn.setText(tr("Xuất lịch trình (PDF)…"))
+        self.file_menu_btn.setText(tr("Quản lý chương trình ▾"))
+        self.load_action.setText(tr("Mở chương trình"))
+        self.save_action.setText(tr("Lưu chương trình"))
+        self.backup_action.setText(tr("Khôi phục sao lưu…"))
+        self.template_action.setText(tr("Mẫu chương trình…"))
+        self.export_pdf_action.setText(tr("Xuất lịch trình (PDF)…"))
         self.preview_btn.setText(tr("Xem thử màn hình"))
         self.remote_btn.setText(tr("Điều khiển từ xa…"))
         self.settings_btn.setText(tr("Cài đặt…"))

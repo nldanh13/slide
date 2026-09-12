@@ -130,6 +130,7 @@ _TRANSLATIONS: dict[str, str] = {
     "Không thể xuất PDF": "Could not export PDF",
     "Đã xuất lịch trình: {path}": "Schedule exported: {path}",
     "Chưa có báo cáo viên": "No speakers yet",
+    "Quản lý chương trình ▾": "Manage program ▾",
     "Sẵn sàng": "Ready",
     "Chưa chọn": "Not selected",
     "📡 Điều khiển từ xa: cổng {port}": "📡 Remote control: port {port}",

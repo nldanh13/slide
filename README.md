@@ -1,5 +1,7 @@
 # PPT Event Controller
 
+[![Tests](https://github.com/nldanh13/slide/actions/workflows/tests.yml/badge.svg)](https://github.com/nldanh13/slide/actions/workflows/tests.yml)
+
 Ứng dụng Windows điều khiển chương trình gồm background, giới thiệu từng báo cáo viên,
 file PowerPoint tương ứng, màn hình chuyển tiếp, thảo luận, Post-test và kết thúc.
 
@@ -17,9 +19,15 @@ file PowerPoint tương ứng, màn hình chuyển tiếp, thảo luận, Post-t
 4. Nhập tên chương trình, chọn background/logo.
 5. Chọn **Thêm báo cáo viên**, nhập thông tin và gắn file PowerPoint.
 6. Chọn đúng màn hình sân khấu, sau đó bấm **Xem thử màn hình**.
-7. Bấm **Lưu chương trình** rồi **BẮT ĐẦU**.
+7. Mở menu **Quản lý chương trình ▾** → **Lưu chương trình**, rồi bấm **BẮT ĐẦU**.
 
 Có thể mở `sample_program.json` để xem cấu trúc dữ liệu mẫu.
+
+Các thao tác Mở/Lưu chương trình, Khôi phục sao lưu, Mẫu chương trình và Xuất lịch
+trình (PDF) đều nằm gọn trong menu **Quản lý chương trình ▾** ở thanh dưới cùng — các
+nút còn lại (Xem thử màn hình, Điều khiển từ xa, Cài đặt, Trước/Bắt đầu/Tiếp/Kết thúc)
+là nhóm điều khiển trực tiếp khi trình chiếu, để tránh bấm nhầm lúc đang chạy chương
+trình thật.
 
 ## Flow tự động
 
@@ -217,3 +225,16 @@ py -m venv .venv
 pip install -r requirements.txt
 python main.py
 ```
+
+## Chạy test / CI
+
+Bộ test (`test_*.py`) không phụ thuộc Windows/PowerPoint nên chạy được trên mọi hệ điều
+hành:
+
+```bash
+pip install -r requirements.txt
+python -m unittest discover -p "test_*.py" -v
+```
+
+GitHub Actions (`.github/workflows/tests.yml`) tự động chạy toàn bộ test này mỗi khi có
+commit hoặc pull request mới, để lỗi không lọt vào `main` mà không ai biết.
