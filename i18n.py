@@ -101,6 +101,17 @@ _TRANSLATIONS: dict[str, str] = {
     "Xóa mẫu \"{name}\"?": "Delete template \"{name}\"?",
     "Tải mẫu": "Load template",
     "Đã tải mẫu chương trình.": "Program template loaded.",
+    "Báo cáo viên đang trình bày": "The speaker is presenting",
+    "Bài trình chiếu hiện tại chưa kết thúc. Chuyển sang phần khác sẽ đóng "
+    "bài đang chiếu ngay lập tức. Bạn có chắc chắn?": (
+        "The current presentation hasn't finished. Switching to another part will "
+        "close it immediately. Are you sure?"
+    ),
+    "Báo cáo viên đang trình bày dở. Kết thúc ngay sẽ đóng bài đang "
+    "chiếu ngay lập tức. Bạn có chắc chắn?": (
+        "The speaker is still presenting. Ending now will close their presentation "
+        "immediately. Are you sure?"
+    ),
     "Sẵn sàng": "Ready",
     "Chưa chọn": "Not selected",
     "📡 Điều khiển từ xa: cổng {port}": "📡 Remote control: port {port}",

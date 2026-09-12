@@ -166,5 +166,73 @@ class NoSpuriousAutoAdvanceTest(unittest.TestCase):
         )
 
 
+class ConfirmBeforeInterruptingPresentationTest(unittest.TestCase):
+    """Bấm Tiếp/Trước trong lúc PowerPoint đang chạy phải hỏi xác nhận trước khi đóng
+    bài đang chiếu, để tránh 'văng bài' báo cáo viên do bấm nhầm."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.app = QApplication.instance() or QApplication([])
+
+    def setUp(self):
+        from main_window import MainWindow
+
+        self._orig_question = QMessageBox.question
+        self.addCleanup(setattr, QMessageBox, "question", self._orig_question)
+        QMessageBox.question = staticmethod(lambda *a, **k: QMessageBox.Yes)
+
+        self.window = MainWindow()
+        self.addCleanup(self.window.remote.stop)
+        self.addCleanup(self.window.close)
+
+        self.running = False
+        self.window.ppt.start = lambda path: setattr(self, "running", True)
+        self.window.ppt.is_running = lambda: self.running
+        self.window.ppt.close_presentation = lambda: setattr(self, "running", False)
+
+        self.window.event_name.setText("Sự kiện test")
+        self.window.program.reports = [
+            Report(name="A", topic="T1", ppt="core.py"),
+            Report(name="B", topic="T2", ppt="core.py"),
+        ]
+        self.window._refresh_table()
+        self.window.start_show()
+        self.window.next_scene()  # -> speaker 1
+        self.window.next_scene()  # -> powerpoint 1
+        self.app.processEvents()
+        self.running = True
+        self.window._monitor_powerpoint()  # ppt confirmed running
+
+    def test_declining_confirmation_keeps_presentation_open(self):
+        QMessageBox.question = staticmethod(lambda *a, **k: QMessageBox.No)
+        index_before = self.window.scene_index
+        self.window.next_scene()
+        self.assertEqual(self.window.scene_index, index_before)
+        self.assertTrue(self.running, "PowerPoint không được đóng khi người dùng từ chối xác nhận")
+
+    def test_accepting_confirmation_proceeds_as_normal(self):
+        QMessageBox.question = staticmethod(lambda *a, **k: QMessageBox.Yes)
+        self.window.next_scene()
+        self.assertEqual(self.window.scenes[self.window.scene_index]["type"], "transition")
+        self.assertFalse(self.running)
+
+    def test_no_confirmation_needed_between_non_powerpoint_scenes(self):
+        calls = []
+        QMessageBox.question = staticmethod(lambda *a, **k: calls.append(1) or QMessageBox.Yes)
+        self.window.next_scene()  # đóng ppt (Yes), sang transition
+        calls.clear()
+        self.window.next_scene()  # transition -> speaker 2, không có ppt đang chạy
+        self.assertEqual(calls, [], "không nên hỏi xác nhận khi không có PowerPoint đang chạy")
+        self.assertEqual(self.window.scenes[self.window.scene_index]["type"], "speaker")
+
+    def test_auto_advance_on_esc_does_not_show_confirmation(self):
+        calls = []
+        QMessageBox.question = staticmethod(lambda *a, **k: calls.append(1) or QMessageBox.Yes)
+        self.running = False  # báo cáo viên tự bấm Esc, PowerPoint tự đóng
+        self.window._monitor_powerpoint()
+        self.assertEqual(calls, [], "auto-advance do Esc không nên hỏi xác nhận")
+        self.assertEqual(self.window.scenes[self.window.scene_index]["type"], "transition")
+
+
 if __name__ == "__main__":
     unittest.main()

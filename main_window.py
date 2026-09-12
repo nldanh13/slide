@@ -610,10 +610,21 @@ class MainWindow(QMainWindow):
         self.stage.show_scene(scene)
         QApplication.processEvents()
 
+    def _confirm_interrupt_presentation(self) -> bool:
+        return self._confirm(
+            tr("Báo cáo viên đang trình bày"),
+            tr(
+                "Bài trình chiếu hiện tại chưa kết thúc. Chuyển sang phần khác sẽ đóng "
+                "bài đang chiếu ngay lập tức. Bạn có chắc chắn?"
+            ),
+        )
+
     def next_scene(self):
         if not self.scenes or self.scene_index >= len(self.scenes) - 1:
             return
         if self.ppt.is_running():
+            if not self._confirm_interrupt_presentation():
+                return
             self._prepare_stage_for_scene(self.scenes[self.scene_index + 1])
             self.ppt.close_presentation()
             # Vừa chủ động đóng PowerPoint theo lệnh người dùng — không phải do báo cáo
@@ -627,6 +638,8 @@ class MainWindow(QMainWindow):
         if not self.scenes or self.scene_index <= 0:
             return
         if self.ppt.is_running():
+            if not self._confirm_interrupt_presentation():
+                return
             self._prepare_stage_for_scene(self.scenes[self.scene_index - 1])
             self.ppt.close_presentation()
             self.ppt_seen_running = False
@@ -648,10 +661,22 @@ class MainWindow(QMainWindow):
             self.next_scene()
 
     def stop_show(self):
-        if self.scenes and not self._confirm(
-            tr("Kết thúc trình chiếu"), tr("Bạn có chắc muốn kết thúc trình chiếu hiện tại?")
-        ):
-            return
+        if self.scenes:
+            mid_presentation = (
+                0 <= self.scene_index < len(self.scenes)
+                and self.scenes[self.scene_index]["type"] == "powerpoint"
+                and self.ppt.is_running()
+            )
+            question = (
+                tr(
+                    "Báo cáo viên đang trình bày dở. Kết thúc ngay sẽ đóng bài đang "
+                    "chiếu ngay lập tức. Bạn có chắc chắn?"
+                )
+                if mid_presentation
+                else tr("Bạn có chắc muốn kết thúc trình chiếu hiện tại?")
+            )
+            if not self._confirm(tr("Kết thúc trình chiếu"), question):
+                return
         self.ppt_seen_running = False
         self._pending_ppt_hide_stage = False
         self.ppt.close_presentation()

@@ -183,6 +183,13 @@ PowerPoint, hoặc không tìm thấy ảnh nền/logo/ảnh báo cáo viên đ�
 chạy: bắt đầu lại từ đầu khi đang trình chiếu, kết thúc trình chiếu, đóng ứng dụng khi
 đang chạy, hoặc mở một chương trình khác khi dữ liệu hiện tại chưa lưu.
 
+**Chống bấm nhầm làm văng bài báo cáo viên:** nếu báo cáo viên đang trình bày dở
+(PowerPoint đang chạy) mà người điều khiển bấm **Phần tiếp ▶**, **◀ Phần trước**, hoặc
+**KẾT THÚC** — dù bấm nhầm hay cố ý — ứng dụng sẽ luôn hỏi xác nhận trước khi đóng bài
+đang chiếu, tránh làm gián đoạn báo cáo viên giữa chừng chỉ vì một cú bấm nhầm. Việc
+báo cáo viên tự bấm `Esc` để kết thúc bài của chính mình thì không bị hỏi lại (đó là
+thao tác chủ động của họ).
+
 ## Lưu ý màn hình PowerPoint
 
 PowerPoint dùng màn hình trình chiếu đã chọn trong chính PowerPoint. Trước chương trình,
