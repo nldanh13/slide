@@ -18,7 +18,7 @@ _TRANSLATIONS: dict[str, str] = {
     "Màn hình sân khấu": "Stage screen",
     "Thảo luận (phút)": "Discussion (minutes)",
     "Link Post-test": "Post-test link",
-    "Màn hình ảo (chỉ bật khi test, không có máy chiếu)": "Virtual screen (test mode, no projector)",
+    "Màn hình ảo (chế độ test)": "Virtual screen (test mode)",
     "Khi bật: màn hình sân khấu hiện dưới dạng cửa sổ nhỏ để xem thử,\n"
     "không chiếm toàn màn hình — dùng khi không có máy chiếu/màn hình thứ 2 để test.\n"
     "Khi trình chiếu thật, hãy tắt mục này.": (
@@ -152,6 +152,11 @@ _TRANSLATIONS: dict[str, str] = {
     "(dùng ô \"Background\" ở màn hình chính)": "(use the \"Background\" field on the main screen)",
     "Sẵn sàng": "Ready",
     "Chưa chọn": "Not selected",
+    "Xem trước sân khấu": "Stage preview",
+    "Chưa bắt đầu": "Not started",
+    "CHƯA BẮT ĐẦU TRÌNH CHIẾU": "SHOW NOT STARTED",
+    "Xem thử: Màn hình mở đầu": "Preview: Opening screen",
+    "ĐANG TRÌNH CHIẾU POWERPOINT": "PRESENTING POWERPOINT",
     "📡 Điều khiển từ xa: cổng {port}": "📡 Remote control: port {port}",
     "📡 Điều khiển từ xa: chưa bật": "📡 Remote control: not started",
     "Mở chương trình khác": "Open another program",

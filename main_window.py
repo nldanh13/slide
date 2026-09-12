@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFileDialog,
+    QFrame,
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
@@ -20,6 +21,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QMessageBox,
     QPushButton,
+    QScrollArea,
     QSpinBox,
     QTableWidget,
     QTableWidgetItem,
@@ -150,6 +152,29 @@ INTERFACE_SLOTS = [
 ]
 
 
+class _AspectRatioBox(QWidget):
+    """Giữ khung xem trước theo tỉ lệ 16:9 khi cửa sổ co giãn, giống khung
+    preview trong các phần mềm dựng video — canh giữa, không méo hình dù
+    panel bị kéo rộng/hẹp/cao/thấp khác tỉ lệ màn chiếu thật."""
+
+    def __init__(self, child: QWidget, parent=None):
+        super().__init__(parent)
+        self._child = child
+        child.setParent(self)
+
+    def resizeEvent(self, event):
+        width, height = self.width(), self.height()
+        target_height = width * 9 / 16
+        if target_height <= height:
+            child_w, child_h = width, target_height
+        else:
+            child_w, child_h = height * 16 / 9, height
+        x = (width - child_w) / 2
+        y = (height - child_h) / 2
+        self._child.setGeometry(int(x), int(y), int(child_w), int(child_h))
+        super().resizeEvent(event)
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -157,7 +182,7 @@ class MainWindow(QMainWindow):
         set_language(self.settings.language)
 
         self.setWindowTitle(tr("Điều khiển chương trình PowerPoint"))
-        self.resize(1180, 900)
+        self.resize(1440, 860)
         self.program = Program()
         self.program_path = ""
         self.scenes: list[dict] = []
@@ -177,6 +202,7 @@ class MainWindow(QMainWindow):
         self.remote.start(port=self.settings.remote_port)
 
         self._build_ui()
+        self._update_preview({"type": "opening", "title": tr("CHƯA BẮT ĐẦU TRÌNH CHIẾU")}, tr("Chưa bắt đầu"))
         self._build_shortcuts()
         self._refresh_table()
         self._offer_autosave_recovery()
@@ -198,6 +224,11 @@ class MainWindow(QMainWindow):
         self.heading.setFont(QFont("Segoe UI", 20, QFont.Bold))
         root.addWidget(self.heading)
 
+        body = QHBoxLayout()
+        body.setSpacing(14)
+        left_layout = QVBoxLayout()
+        left_layout.setSpacing(10)
+
         self.info_group = QGroupBox(tr("Thông tin chương trình"))
         form = QGridLayout(self.info_group)
         self.event_name = QLineEdit(self.program.event_name)
@@ -212,10 +243,10 @@ class MainWindow(QMainWindow):
 
         self.label_event_name = QLabel(tr("Tên chương trình"))
         form.addWidget(self.label_event_name, 0, 0)
-        form.addWidget(self.event_name, 0, 1, 1, 3)
+        form.addWidget(self.event_name, 0, 1, 1, 2)
         self.label_organizer = QLabel(tr("Đơn vị tổ chức"))
         form.addWidget(self.label_organizer, 1, 0)
-        form.addWidget(self.organizer, 1, 1, 1, 3)
+        form.addWidget(self.organizer, 1, 1, 1, 2)
         self.label_logo = QLabel(tr("Logo"))
         form.addWidget(self.label_logo, 2, 0)
         form.addWidget(self.logo, 2, 1)
@@ -223,25 +254,25 @@ class MainWindow(QMainWindow):
         self.logo_btn.clicked.connect(lambda: self._set_path(self.logo, "Ảnh (*.png *.jpg *.jpeg)"))
         form.addWidget(self.logo_btn, 2, 2)
         self.label_screen = QLabel(tr("Màn hình sân khấu"))
-        form.addWidget(self.label_screen, 2, 3)
-        form.addWidget(self.screen, 2, 4)
+        form.addWidget(self.label_screen, 3, 0)
+        form.addWidget(self.screen, 3, 1, 1, 2)
         self.label_discussion = QLabel(tr("Thảo luận (phút)"))
-        form.addWidget(self.label_discussion, 3, 0)
-        form.addWidget(self.discussion, 3, 1)
+        form.addWidget(self.label_discussion, 4, 0)
+        form.addWidget(self.discussion, 4, 1)
         self.label_post_url = QLabel(tr("Link Post-test"))
-        form.addWidget(self.label_post_url, 4, 0)
-        form.addWidget(self.post_url, 4, 1, 1, 4)
-        self.virtual_screen = QCheckBox(tr("Màn hình ảo (chỉ bật khi test, không có máy chiếu)"))
+        form.addWidget(self.label_post_url, 5, 0)
+        form.addWidget(self.post_url, 5, 1, 1, 2)
+        self.virtual_screen = QCheckBox(tr("Màn hình ảo (chế độ test)"))
         self.virtual_screen.setToolTip(tr(
             "Khi bật: màn hình sân khấu hiện dưới dạng cửa sổ nhỏ để xem thử,\n"
             "không chiếm toàn màn hình — dùng khi không có máy chiếu/màn hình thứ 2 để test.\n"
             "Khi trình chiếu thật, hãy tắt mục này."
         ))
-        form.addWidget(self.virtual_screen, 5, 0, 1, 2)
+        form.addWidget(self.virtual_screen, 6, 0, 1, 3)
         self.show_timer = QCheckBox(tr("Hiện đồng hồ đếm giờ trên sân khấu"))
         self.show_timer.setChecked(True)
-        form.addWidget(self.show_timer, 5, 2, 1, 3)
-        root.addWidget(self.info_group)
+        form.addWidget(self.show_timer, 7, 0, 1, 3)
+        left_layout.addWidget(self.info_group)
 
         self.speakers_group = QGroupBox(tr("Báo cáo viên"))
         speakers_layout = QVBoxLayout(self.speakers_group)
@@ -279,7 +310,7 @@ class MainWindow(QMainWindow):
         self.table.doubleClicked.connect(self.edit_report)
         self.table.model().rowsMoved.connect(self._on_rows_dragged)
         speakers_layout.addWidget(self.table, 1)
-        root.addWidget(self.speakers_group, 1)
+        left_layout.addWidget(self.speakers_group, 1)
 
         self.interface_group = QGroupBox(tr("Giao diện chương trình"))
         interface_layout = QVBoxLayout(self.interface_group)
@@ -326,7 +357,31 @@ class MainWindow(QMainWindow):
         self.interface_media_btn = QPushButton(tr("Cấu hình slide nâng cao (từ file chương trình tổng)…"))
         self.interface_media_btn.clicked.connect(self.show_interface_media_dialog)
         interface_layout.addWidget(self.interface_media_btn)
-        root.addWidget(self.interface_group)
+        left_layout.addWidget(self.interface_group)
+
+        left_container = QWidget()
+        left_container.setLayout(left_layout)
+        left_scroll = QScrollArea()
+        left_scroll.setWidget(left_container)
+        left_scroll.setWidgetResizable(True)
+        left_scroll.setFrameShape(QFrame.NoFrame)
+        left_scroll.setMinimumWidth(400)
+        body.addWidget(left_scroll, 2)
+
+        self.preview_group = QGroupBox(tr("Xem trước sân khấu"))
+        preview_group_layout = QVBoxLayout(self.preview_group)
+        self.preview_pane = StageWindow()
+        preview_box = _AspectRatioBox(self.preview_pane)
+        preview_box.setMinimumHeight(320)
+        preview_box.setStyleSheet("background: #000000; border-radius: 6px;")
+        preview_group_layout.addWidget(preview_box, 1)
+        self.preview_caption = QLabel(tr("Chưa bắt đầu"))
+        self.preview_caption.setAlignment(Qt.AlignCenter)
+        self.preview_caption.setStyleSheet("color: #9aa3b2; padding-top: 6px;")
+        preview_group_layout.addWidget(self.preview_caption)
+        body.addWidget(self.preview_group, 3)
+
+        root.addLayout(body, 1)
 
         footer = QHBoxLayout()
         self.file_menu_btn = QPushButton(tr("Quản lý chương trình ▾"))
@@ -395,11 +450,12 @@ class MainWindow(QMainWindow):
         self.label_screen.setText(tr("Màn hình sân khấu"))
         self.label_discussion.setText(tr("Thảo luận (phút)"))
         self.label_post_url.setText(tr("Link Post-test"))
-        self.virtual_screen.setText(tr("Màn hình ảo (chỉ bật khi test, không có máy chiếu)"))
+        self.virtual_screen.setText(tr("Màn hình ảo (chế độ test)"))
         self.show_timer.setText(tr("Hiện đồng hồ đếm giờ trên sân khấu"))
         self.info_group.setTitle(tr("Thông tin chương trình"))
         self.speakers_group.setTitle(tr("Báo cáo viên"))
         self.interface_group.setTitle(tr("Giao diện chương trình"))
+        self.preview_group.setTitle(tr("Xem trước sân khấu"))
         for button, key in self.toolbar_buttons:
             button.setText(tr(key))
         self.table.setHorizontalHeaderLabels([tr(h) for h in self.table_headers])
@@ -692,11 +748,22 @@ class MainWindow(QMainWindow):
             return
         self.status.setText(tr("Đã xuất lịch trình: {path}").format(path=path))
 
+    def _update_preview(self, scene: dict, caption: str = "") -> None:
+        """Cập nhật khung xem trước lớn ở giữa cửa sổ điều khiển — luôn phản
+        chiếu đúng nội dung đang/sắp hiện trên màn hình sân khấu thật, để
+        người vận hành theo dõi ngay tại chỗ mà không cần nhìn sang máy chiếu.
+        Riêng cảnh PowerPoint (mở qua COM) không thể mirror trực tiếp nên nơi
+        gọi hàm này sẽ truyền vào một scene thay thế dạng thông báo."""
+        self.preview_pane.set_program(self.program)
+        self.preview_pane.show_scene(scene)
+        self.preview_caption.setText(caption or self._scene_label(scene))
+
     def _show_stage(self):
         screen = self.screen.currentData()
         if screen is None:
             screen = QApplication.primaryScreen()
         self.stage.set_program(self.program)
+        self.preview_pane.set_program(self.program)
         if self.virtual_screen.isChecked():
             self.stage.set_simulation_mode(True)
             self.stage.setWindowTitle(tr("Màn hình sân khấu (ẢO – chỉ dùng để test)"))
@@ -714,7 +781,9 @@ class MainWindow(QMainWindow):
     def preview(self):
         self._sync_program()
         self._show_stage()
-        self.stage.show_scene({"type": "opening", "title": "CHÀO MỪNG QUÝ ĐẠI BIỂU"})
+        scene = {"type": "opening", "title": "CHÀO MỪNG QUÝ ĐẠI BIỂU"}
+        self.stage.show_scene(scene)
+        self._update_preview(scene, tr("Xem thử: Màn hình mở đầu"))
 
     def show_remote_dialog(self):
         dialog = RemoteDialog(self, self.remote)
@@ -766,15 +835,24 @@ class MainWindow(QMainWindow):
             self._pending_ppt_hide_stage = True
             try:
                 self.ppt.start(scene["report"].ppt)
+                # PowerPoint chạy qua COM nên không thể chiếu trực tiếp vào khung xem
+                # trước — hiện thông báo đang trình chiếu kèm tên báo cáo viên thay thế.
+                self._update_preview(
+                    {"type": "transition", "title": tr("ĐANG TRÌNH CHIẾU POWERPOINT"), "report": scene["report"]},
+                    label,
+                )
             except PowerPointError as exc:
                 self._pending_ppt_hide_stage = False
                 QMessageBox.critical(self, tr("Lỗi PowerPoint"), str(exc))
                 self._show_stage()
-                self.stage.show_scene({"type": "transition", "title": "KHÔNG THỂ MỞ BÀI TRÌNH CHIẾU", "report": scene["report"]})
+                fail_scene = {"type": "transition", "title": "KHÔNG THỂ MỞ BÀI TRÌNH CHIẾU", "report": scene["report"]}
+                self.stage.show_scene(fail_scene)
+                self._update_preview(fail_scene, label)
         else:
             self._pending_ppt_hide_stage = False
             self._show_stage()
             self.stage.show_scene(scene)
+            self._update_preview(scene, label)
 
     def _scene_label(self, scene: dict) -> str:
         if scene["type"] == "powerpoint" and scene.get("interface_kind"):
@@ -801,6 +879,7 @@ class MainWindow(QMainWindow):
         self._pending_ppt_hide_stage = False
         self._show_stage()
         self.stage.show_scene(scene)
+        self._update_preview(scene, self._scene_label(scene))
         QApplication.processEvents()
 
     def _confirm_interrupt_presentation(self) -> bool:
@@ -877,6 +956,7 @@ class MainWindow(QMainWindow):
         self.timer_overlay.stop()
         self.scenes = []
         self.scene_index = -1
+        self._update_preview({"type": "opening", "title": tr("CHƯA BẮT ĐẦU TRÌNH CHIẾU")}, tr("Chưa bắt đầu"))
         self.status.setText(tr("Đã kết thúc trình chiếu"))
         self.remote.set_status(tr("Đã kết thúc trình chiếu"))
 
