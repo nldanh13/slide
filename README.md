@@ -16,10 +16,13 @@ file PowerPoint tương ứng, màn hình chuyển tiếp, thảo luận, Post-t
 
 1. Giải nén toàn bộ thư mục.
 3. Lần đầu ứng dụng tự tạo `.venv` và cài thư viện, nên cần Internet và có thể mất vài phút.
-4. Nhập tên chương trình, chọn background/logo.
-5. Chọn **Thêm báo cáo viên**, nhập thông tin và gắn file PowerPoint.
-6. Chọn đúng màn hình sân khấu, sau đó bấm **Xem thử màn hình**.
-7. Mở menu **Quản lý chương trình ▾** → **Lưu chương trình**, rồi bấm **BẮT ĐẦU**.
+4. Nhập tên chương trình, chọn logo (nếu có).
+5. Bấm **Thêm báo cáo viên / Nhập file…**, chọn file PowerPoint của (các) báo cáo viên
+   — ứng dụng tự thêm vào bảng, bấm **Sửa** để bổ sung đơn vị/chuyên đề/ảnh/thời lượng.
+6. Ở bảng **Giao diện chương trình** bên dưới, gán ảnh nền/PowerPoint mở đầu-kết thúc
+   nếu cần (không bắt buộc).
+7. Chọn đúng màn hình sân khấu, sau đó bấm **Xem thử màn hình**.
+8. Mở menu **Quản lý chương trình ▾** → **Lưu chương trình**, rồi bấm **BẮT ĐẦU**.
 
 Có thể mở `sample_program.json` để xem cấu trúc dữ liệu mẫu.
 
@@ -157,43 +160,40 @@ Bấm **Mẫu chương trình…** để:
 
 Các mẫu được lưu dưới dạng file JSON trong thư mục `templates/` cạnh ứng dụng.
 
-## Dùng slide riêng (từ 1 file PowerPoint tổng) hoặc ảnh riêng cho từng phần
+## Nhập file và cấu hình giao diện chương trình
 
-Ngoài ảnh **Background** dùng chung mặc định, bấm **Cấu hình slide/ảnh riêng cho
-từng phần…** để tùy chỉnh riêng cho **Thảo luận**, **Post-test**, **Kết thúc** (và cả
-**Nền/Mở đầu** mặc định) theo 1 trong 2 cách:
+Chỉ có **1 nút nhập file** — **Thêm báo cáo viên / Nhập file…** — dùng cho mọi trường
+hợp: chọn 1 hay nhiều file PowerPoint/ảnh cùng lúc, ứng dụng tự đoán vai trò theo tên
+file và áp dụng ngay, không qua bước xem trước riêng:
 
-1. **Dùng slide có sẵn** — chọn 1 file PowerPoint "chương trình tổng" (có thể là file
-   thiết kế sẵn nhiều slide cho toàn bộ giao diện chương trình), rồi nhập số thứ tự
-   slide tương ứng cho từng phần. Ứng dụng tự mở PowerPoint (ẩn) để xuất slide đó ra
-   ảnh nền (cần cài Microsoft PowerPoint) — ảnh xuất ra được lưu cache trong thư mục
-   `slide_cache/` để không phải xuất lại nếu file gốc không đổi.
-2. **Dùng ảnh riêng** — nếu không có/không muốn dùng slide, chọn thẳng 1 file ảnh cho
-   phần đó.
+- File PowerPoint chứa từ khóa "khai mạc", "chương trình", "MC", "mở đầu"... → gán làm
+  **Mở đầu (PowerPoint)**.
+- File PowerPoint chứa từ khóa "kết thúc", "bế mạc", "closing"... → gán làm
+  **Kết thúc (PowerPoint)**.
+- File PowerPoint còn lại → thêm thành **báo cáo viên mới** trong bảng chính (tên tạm
+  đoán từ tên file).
+- File ảnh chứa từ khóa "thảo luận", "post test"/"kiểm tra", "kết thúc"... → gán vào
+  đúng phần tương ứng; ảnh không khớp từ khóa nào mặc định gán làm **ảnh nền chung**.
 
-Nếu một phần không được cấu hình gì cả, ứng dụng tự rơi về dùng ảnh **Background**
-mặc định — không bắt buộc phải cấu hình đầy đủ cả 4 phần.
+Sau khi nhập, **"setup" (kiểm tra/sửa lại) diễn ra ngay trong 2 bảng ở khung dưới**:
 
-## Nhập nhiều file PowerPoint cùng lúc
+- **Bảng báo cáo viên** — bấm **Sửa** để bổ sung đơn vị/chuyên đề/ảnh/thời lượng cho
+  từng người (nhập nhanh chỉ điền tên + file PowerPoint).
+- **Bảng "Giao diện chương trình"** — 6 dòng cố định (Mở đầu, Nền mặc định, Thảo luận,
+  Post-test, Kết thúc PowerPoint, Kết thúc ảnh riêng), mỗi dòng có nút **Chọn…**/**Xóa**
+  để gán hoặc thay đổi file trực tiếp nếu ứng dụng đoán sai hoặc bạn muốn cấu hình thủ
+  công — không cần đợi nhập file trước.
 
-Thay vì bấm **+ Thêm báo cáo viên** từng người, bấm **Nhập nhiều file PowerPoint…** để
-chọn cả loạt file `.pptx` một lần. Ứng dụng đoán theo tên file:
+Nếu một phần không được gán gì cả, ứng dụng tự rơi về dùng **ảnh nền mặc định**. Khi đã
+gán file PowerPoint cho Mở đầu/Kết thúc, chương trình sẽ **mở file đó bằng PowerPoint**
+(giống hệt cách chiếu bài của báo cáo viên) thay cho màn hình nền tĩnh mặc định.
 
-- File chứa từ khóa như "khai mạc", "chương trình", "MC", "background", "mở đầu"...
-  được xếp vào nhóm **Giao diện – Mở đầu**.
-- File chứa từ khóa như "kết thúc", "bế mạc", "closing"... được xếp vào nhóm
-  **Giao diện – Kết thúc**.
-- Các file còn lại được xếp vào nhóm **Báo cáo viên** (tên báo cáo viên tạm đoán từ
-  tên file, bạn có thể sửa lại).
-
-Bảng xem trước cho phép bạn đổi lại phân loại từng dòng (hoặc chọn **Bỏ qua**) trước
-khi bấm **Nhập**. Sau khi nhập, các báo cáo viên xuất hiện trong bảng chính như bình
-thường (vào **Sửa** để bổ sung đơn vị/chuyên đề/ảnh/thời lượng); file khai mạc/kết thúc
-được điền vào 2 ô **File khai mạc** / **File kết thúc** ở khung thông tin chương trình.
-
-Khi đã khai báo file khai mạc/kết thúc, chương trình sẽ **mở file đó bằng PowerPoint**
-(giống hệt cách chiếu bài của báo cáo viên) thay cho màn hình nền tĩnh mặc định ở phần
-mở đầu/kết thúc. Để trống (bấm **Xóa**) nếu muốn quay lại dùng màn hình nền mặc định.
+**Cấu hình nâng cao** (không bắt buộc): bấm **Cấu hình slide nâng cao (từ file chương
+trình tổng)…** bên dưới bảng giao diện nếu muốn dùng 1 file PowerPoint nhiều slide làm
+"chương trình tổng", rồi chỉ định số thứ tự slide cho từng phần thay vì dùng ảnh rời.
+Ứng dụng tự mở PowerPoint (ẩn) để xuất slide đó ra ảnh (cần cài Microsoft PowerPoint) —
+ảnh xuất ra được lưu cache trong thư mục `slide_cache/` để không phải xuất lại nếu file
+gốc không đổi.
 
 ## Đóng gói thành file .exe (không cần cài Python)
 

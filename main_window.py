@@ -28,9 +28,9 @@ from PySide6.QtWidgets import (
 
 from backup_dialog import BackupDialog
 from backups import create_backup
-from bulk_import import BulkImportDialog
+from bulk_import import classify_file, guess_report_name
 from template_dialog import TemplateDialog
-from core import Program, ProgramFileError, validate_program
+from core import Program, ProgramFileError, Report, validate_program
 from dialogs import ReportDialog, RemoteDialog, choose_file
 from export_schedule import export_schedule_pdf
 from i18n import set_language, tr
@@ -76,6 +76,20 @@ SCENE_LABELS = {
     "closing": "Kết thúc",
 }
 
+PPT_FILTER = "PowerPoint (*.ppt *.pptx *.pptm *.pps *.ppsx)"
+IMAGE_FILTER = "Ảnh (*.png *.jpg *.jpeg *.bmp)"
+
+# (tên trường trong Program, nhãn hiển thị, loại file) cho từng phần giao diện có thể
+# gán riêng file/ảnh — hiển thị trong bảng "Giao diện chương trình" ở cửa sổ chính.
+INTERFACE_SLOTS = [
+    ("opening_ppt", "Mở đầu (PowerPoint)", "ppt"),
+    ("background", "Nền mặc định (ảnh)", "image"),
+    ("discussion_image", "Thảo luận (ảnh riêng)", "image"),
+    ("post_test_image", "Post-test (ảnh riêng)", "image"),
+    ("closing_ppt", "Kết thúc (PowerPoint)", "ppt"),
+    ("closing_image", "Kết thúc (ảnh riêng)", "image"),
+]
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -84,7 +98,7 @@ class MainWindow(QMainWindow):
         set_language(self.settings.language)
 
         self.setWindowTitle(tr("Điều khiển chương trình PowerPoint"))
-        self.resize(1180, 760)
+        self.resize(1180, 900)
         self.program = Program()
         self.program_path = ""
         self.scenes: list[dict] = []
@@ -128,7 +142,6 @@ class MainWindow(QMainWindow):
         form = QGridLayout()
         self.event_name = QLineEdit(self.program.event_name)
         self.organizer = QLineEdit()
-        self.background = QLineEdit()
         self.logo = QLineEdit()
         self.discussion = QSpinBox()
         self.discussion.setRange(1, 240)
@@ -143,24 +156,18 @@ class MainWindow(QMainWindow):
         self.label_organizer = QLabel(tr("Đơn vị tổ chức"))
         form.addWidget(self.label_organizer, 1, 0)
         form.addWidget(self.organizer, 1, 1, 1, 3)
-        self.label_background = QLabel(tr("Background"))
-        form.addWidget(self.label_background, 2, 0)
-        form.addWidget(self.background, 2, 1)
-        self.bg_btn = QPushButton(tr("Chọn ảnh…"))
-        self.bg_btn.clicked.connect(lambda: self._set_path(self.background, "Ảnh (*.png *.jpg *.jpeg *.bmp)"))
-        form.addWidget(self.bg_btn, 2, 2)
         self.label_logo = QLabel(tr("Logo"))
-        form.addWidget(self.label_logo, 3, 0)
-        form.addWidget(self.logo, 3, 1)
+        form.addWidget(self.label_logo, 2, 0)
+        form.addWidget(self.logo, 2, 1)
         self.logo_btn = QPushButton(tr("Chọn logo…"))
         self.logo_btn.clicked.connect(lambda: self._set_path(self.logo, "Ảnh (*.png *.jpg *.jpeg)"))
-        form.addWidget(self.logo_btn, 3, 2)
+        form.addWidget(self.logo_btn, 2, 2)
         self.label_screen = QLabel(tr("Màn hình sân khấu"))
         form.addWidget(self.label_screen, 2, 3)
         form.addWidget(self.screen, 2, 4)
         self.label_discussion = QLabel(tr("Thảo luận (phút)"))
-        form.addWidget(self.label_discussion, 3, 3)
-        form.addWidget(self.discussion, 3, 4)
+        form.addWidget(self.label_discussion, 3, 0)
+        form.addWidget(self.discussion, 3, 1)
         self.label_post_url = QLabel(tr("Link Post-test"))
         form.addWidget(self.label_post_url, 4, 0)
         form.addWidget(self.post_url, 4, 1, 1, 4)
@@ -170,45 +177,16 @@ class MainWindow(QMainWindow):
             "không chiếm toàn màn hình — dùng khi không có máy chiếu/màn hình thứ 2 để test.\n"
             "Khi trình chiếu thật, hãy tắt mục này."
         ))
-        form.addWidget(self.virtual_screen, 5, 3, 1, 2)
+        form.addWidget(self.virtual_screen, 5, 0, 1, 2)
         self.show_timer = QCheckBox(tr("Hiện đồng hồ đếm giờ trên sân khấu"))
         self.show_timer.setChecked(True)
-        form.addWidget(self.show_timer, 5, 0, 1, 3)
-
-        self.opening_ppt = QLineEdit()
-        self.opening_ppt.setReadOnly(True)
-        self.label_opening_ppt = QLabel(tr("File khai mạc (PowerPoint, tùy chọn)"))
-        form.addWidget(self.label_opening_ppt, 6, 0)
-        form.addWidget(self.opening_ppt, 6, 1, 1, 2)
-        self.opening_ppt_btn = QPushButton(tr("Chọn…"))
-        self.opening_ppt_btn.clicked.connect(lambda: self._set_interface_ppt(self.opening_ppt))
-        form.addWidget(self.opening_ppt_btn, 6, 3)
-        self.opening_ppt_clear_btn = QPushButton(tr("Xóa"))
-        self.opening_ppt_clear_btn.clicked.connect(lambda: self.opening_ppt.clear())
-        form.addWidget(self.opening_ppt_clear_btn, 6, 4)
-
-        self.closing_ppt = QLineEdit()
-        self.closing_ppt.setReadOnly(True)
-        self.label_closing_ppt = QLabel(tr("File kết thúc (PowerPoint, tùy chọn)"))
-        form.addWidget(self.label_closing_ppt, 7, 0)
-        form.addWidget(self.closing_ppt, 7, 1, 1, 2)
-        self.closing_ppt_btn = QPushButton(tr("Chọn…"))
-        self.closing_ppt_btn.clicked.connect(lambda: self._set_interface_ppt(self.closing_ppt))
-        form.addWidget(self.closing_ppt_btn, 7, 3)
-        self.closing_ppt_clear_btn = QPushButton(tr("Xóa"))
-        self.closing_ppt_clear_btn.clicked.connect(lambda: self.closing_ppt.clear())
-        form.addWidget(self.closing_ppt_clear_btn, 7, 4)
-
-        self.interface_media_btn = QPushButton(tr("Cấu hình slide/ảnh riêng cho từng phần…"))
-        self.interface_media_btn.clicked.connect(self.show_interface_media_dialog)
-        form.addWidget(self.interface_media_btn, 8, 0, 1, 5)
+        form.addWidget(self.show_timer, 5, 2, 1, 3)
         root.addLayout(form)
 
         toolbar = QHBoxLayout()
         self.toolbar_buttons = []
         for text, slot in [
-            ("+ Thêm báo cáo viên", self.add_report),
-            ("Nhập nhiều file PowerPoint…", self.bulk_import),
+            ("Thêm báo cáo viên / Nhập file…", self.import_files),
             ("Sửa", self.edit_report),
             ("Xóa", self.delete_report),
             ("▲ Lên", lambda: self.move_report(-1)),
@@ -237,6 +215,48 @@ class MainWindow(QMainWindow):
         self.table.doubleClicked.connect(self.edit_report)
         self.table.model().rowsMoved.connect(self._on_rows_dragged)
         root.addWidget(self.table, 1)
+
+        self.interface_heading = QLabel(tr("Giao diện chương trình"))
+        self.interface_heading.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        root.addWidget(self.interface_heading)
+
+        self.interface_table = QTableWidget(len(INTERFACE_SLOTS), 3)
+        self.interface_headers = ["Phần", "File", ""]
+        self.interface_table.setHorizontalHeaderLabels([tr(h) for h in self.interface_headers])
+        self.interface_table.verticalHeader().setVisible(False)
+        self.interface_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.interface_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.interface_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        self.interface_table.setSelectionMode(QTableWidget.NoSelection)
+        self.interface_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.interface_table.verticalHeader().setDefaultSectionSize(28)
+        self.interface_table.setMinimumHeight(230)
+        self.interface_table.setMaximumHeight(230)
+        self._interface_action_widgets = []
+        for row, (field, label_key, kind) in enumerate(INTERFACE_SLOTS):
+            label_item = QTableWidgetItem(tr(label_key))
+            self.interface_table.setItem(row, 0, label_item)
+            self.interface_table.setItem(row, 1, QTableWidgetItem(""))
+
+            action_box = QWidget()
+            action_row = QHBoxLayout(action_box)
+            action_row.setContentsMargins(4, 2, 4, 2)
+            choose_btn = QPushButton(tr("Chọn…"))
+            choose_btn.clicked.connect(
+                lambda _checked=False, f=field, k=kind: self._choose_interface_file(f, k)
+            )
+            clear_btn = QPushButton(tr("Xóa"))
+            clear_btn.clicked.connect(lambda _checked=False, f=field: self._clear_interface_file(f))
+            action_row.addWidget(choose_btn)
+            action_row.addWidget(clear_btn)
+            self.interface_table.setCellWidget(row, 2, action_box)
+            self._interface_action_widgets.append((choose_btn, clear_btn))
+        self._refresh_interface_table()
+        root.addWidget(self.interface_table)
+
+        self.interface_media_btn = QPushButton(tr("Cấu hình slide nâng cao (từ file chương trình tổng)…"))
+        self.interface_media_btn.clicked.connect(self.show_interface_media_dialog)
+        root.addWidget(self.interface_media_btn)
 
         footer = QHBoxLayout()
         self.file_menu_btn = QPushButton(tr("Quản lý chương trình ▾"))
@@ -297,8 +317,6 @@ class MainWindow(QMainWindow):
         self.heading.setText(tr("ĐIỀU KHIỂN CHƯƠNG TRÌNH"))
         self.label_event_name.setText(tr("Tên chương trình"))
         self.label_organizer.setText(tr("Đơn vị tổ chức"))
-        self.label_background.setText(tr("Background"))
-        self.bg_btn.setText(tr("Chọn ảnh…"))
         self.label_logo.setText(tr("Logo"))
         self.logo_btn.setText(tr("Chọn logo…"))
         self.label_screen.setText(tr("Màn hình sân khấu"))
@@ -306,16 +324,18 @@ class MainWindow(QMainWindow):
         self.label_post_url.setText(tr("Link Post-test"))
         self.virtual_screen.setText(tr("Màn hình ảo (chỉ bật khi test, không có máy chiếu)"))
         self.show_timer.setText(tr("Hiện đồng hồ đếm giờ trên sân khấu"))
-        self.label_opening_ppt.setText(tr("File khai mạc (PowerPoint, tùy chọn)"))
-        self.label_closing_ppt.setText(tr("File kết thúc (PowerPoint, tùy chọn)"))
-        for button in (self.opening_ppt_btn, self.closing_ppt_btn):
-            button.setText(tr("Chọn…"))
-        for button in (self.opening_ppt_clear_btn, self.closing_ppt_clear_btn):
-            button.setText(tr("Xóa"))
-        self.interface_media_btn.setText(tr("Cấu hình slide/ảnh riêng cho từng phần…"))
         for button, key in self.toolbar_buttons:
             button.setText(tr(key))
         self.table.setHorizontalHeaderLabels([tr(h) for h in self.table_headers])
+        self.interface_heading.setText(tr("Giao diện chương trình"))
+        self.interface_table.setHorizontalHeaderLabels([tr(h) for h in self.interface_headers])
+        for row, (_field, label_key, _kind) in enumerate(INTERFACE_SLOTS):
+            self.interface_table.item(row, 0).setText(tr(label_key))
+        for choose_btn, clear_btn in self._interface_action_widgets:
+            choose_btn.setText(tr("Chọn…"))
+            clear_btn.setText(tr("Xóa"))
+        self._refresh_interface_table()
+        self.interface_media_btn.setText(tr("Cấu hình slide nâng cao (từ file chương trình tổng)…"))
         self.file_menu_btn.setText(tr("Quản lý chương trình ▾"))
         self.load_action.setText(tr("Mở chương trình"))
         self.save_action.setText(tr("Lưu chương trình"))
@@ -360,37 +380,71 @@ class MainWindow(QMainWindow):
         if value:
             edit.setText(value)
 
-    def _set_interface_ppt(self, edit):
-        value = choose_file(self, tr("Chọn file"), "PowerPoint (*.ppt *.pptx *.pptm *.pps *.ppsx)")
-        if value:
-            edit.setText(value)
+    def import_files(self):
+        """Nút nhập duy nhất: chọn 1 hoặc nhiều file PowerPoint/ảnh cùng lúc, ứng dụng đoán
+        vai trò theo tên file và áp dụng ngay — báo cáo viên thêm vào bảng bên dưới (bấm
+        Sửa để bổ sung chi tiết), file/ảnh giao diện điền vào bảng "Giao diện chương trình"."""
+        paths, _ = QFileDialog.getOpenFileNames(
+            self, tr("Chọn file báo cáo viên hoặc file/ảnh giao diện"), "",
+            f"{tr('PowerPoint & Ảnh')} (*.ppt *.pptx *.pptm *.pps *.ppsx *.png *.jpg *.jpeg *.bmp)",
+        )
+        if not paths:
+            return
+        for path in paths:
+            role = classify_file(path)
+            if role == "speaker":
+                self.program.reports.append(Report(name=guess_report_name(path), ppt=path))
+            elif role == "opening":
+                self.program.opening_ppt = path
+            elif role == "closing":
+                self.program.closing_ppt = path
+            elif role == "background":
+                self.program.background = path
+            elif role == "discussion":
+                self.program.discussion_image = path
+            elif role == "post_test":
+                self.program.post_test_image = path
+            elif role == "closing_image":
+                self.program.closing_image = path
+        self._refresh_table()
+        self._refresh_interface_table()
+        self.status.setText(
+            tr("Đã nhập {count} file — kiểm tra vai trò ở bảng bên dưới, bấm Sửa để bổ sung chi tiết.")
+            .format(count=len(paths))
+        )
 
-    def bulk_import(self):
-        self._sync_program()
-        dialog = BulkImportDialog(self, self.program)
-        if dialog.exec():
-            self._load_form()
+    def _refresh_interface_table(self):
+        for row, (field, _label_key, _kind) in enumerate(INTERFACE_SLOTS):
+            value = getattr(self.program, field)
+            text = Path(value).name if value else tr("Chưa chọn")
+            self.interface_table.item(row, 1).setText(text)
+
+    def _choose_interface_file(self, field: str, kind: str):
+        file_filter = PPT_FILTER if kind == "ppt" else IMAGE_FILTER
+        value = choose_file(self, tr("Chọn file"), file_filter)
+        if value:
+            setattr(self.program, field, value)
+            self._refresh_interface_table()
+
+    def _clear_interface_file(self, field: str):
+        setattr(self.program, field, "")
+        self._refresh_interface_table()
 
     def _sync_program(self):
         self.program.event_name = self.event_name.text().strip()
         self.program.organizer = self.organizer.text().strip()
-        self.program.background = self.background.text().strip()
         self.program.logo = self.logo.text().strip()
         self.program.discussion_minutes = self.discussion.value()
         self.program.post_test_url = self.post_url.text().strip()
-        self.program.opening_ppt = self.opening_ppt.text().strip()
-        self.program.closing_ppt = self.closing_ppt.text().strip()
 
     def _load_form(self):
         self.event_name.setText(self.program.event_name)
         self.organizer.setText(self.program.organizer)
-        self.background.setText(self.program.background)
         self.logo.setText(self.program.logo)
         self.discussion.setValue(self.program.discussion_minutes)
         self.post_url.setText(self.program.post_test_url)
-        self.opening_ppt.setText(self.program.opening_ppt)
-        self.closing_ppt.setText(self.program.closing_ppt)
         self._refresh_table()
+        self._refresh_interface_table()
 
     def _refresh_table(self):
         self.table.setRowCount(len(self.program.reports))
@@ -424,11 +478,6 @@ class MainWindow(QMainWindow):
             self.program.reports = new_order
         self._refresh_table()
 
-    def add_report(self):
-        dialog = ReportDialog(self)
-        if dialog.exec():
-            self.program.reports.append(dialog.report())
-            self._refresh_table()
 
     def edit_report(self):
         row = self.selected_row()
@@ -591,6 +640,7 @@ class MainWindow(QMainWindow):
     def show_interface_media_dialog(self):
         self._sync_program()
         InterfaceMediaDialog(self, self.program).exec()
+        self._refresh_interface_table()
 
     def _confirm(self, title: str, question: str) -> bool:
         return QMessageBox.question(self, title, question) == QMessageBox.Yes

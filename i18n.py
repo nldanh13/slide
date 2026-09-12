@@ -260,6 +260,21 @@ _TRANSLATIONS: dict[str, str] = {
     "Không thể mở file hướng dẫn": "Could not open the guide file",
     "Phiên bản ứng dụng": "Application version",
     "Đóng cửa sổ này": "Close this window",
+    # Bảng "Giao diện chương trình" + nút nhập file gộp
+    "Thêm báo cáo viên / Nhập file…": "Add speaker / Import files…",
+    "Giao diện chương trình": "Program interface",
+    "Mở đầu (PowerPoint)": "Opening (PowerPoint)",
+    "Nền mặc định (ảnh)": "Default background (image)",
+    "Thảo luận (ảnh riêng)": "Discussion (dedicated image)",
+    "Post-test (ảnh riêng)": "Post-test (dedicated image)",
+    "Kết thúc (ảnh riêng)": "Closing (dedicated image)",
+    "Cấu hình slide nâng cao (từ file chương trình tổng)…": "Advanced slide setup (from master program file)…",
+    "Chọn file báo cáo viên hoặc file/ảnh giao diện": "Choose speaker files or interface files/images",
+    "PowerPoint & Ảnh": "PowerPoint & Images",
+    "Đã nhập {count} file — kiểm tra vai trò ở bảng bên dưới, bấm Sửa để bổ sung chi tiết.": (
+        "Imported {count} file(s) — check the assigned role in the table below, "
+        "click Edit to fill in the remaining details."
+    ),
 }
 
 

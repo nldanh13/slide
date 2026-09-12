@@ -1,6 +1,6 @@
 import unittest
 
-from bulk_import import classify_ppt_filename, guess_report_name
+from bulk_import import classify_file, classify_image_filename, classify_ppt_filename, guess_report_name
 
 
 class ClassifyFilenameTest(unittest.TestCase):
@@ -24,6 +24,38 @@ class ClassifyFilenameTest(unittest.TestCase):
 
     def test_numbered_speaker_filename(self):
         self.assertEqual(classify_ppt_filename("bai_bao_cao_2.pptx"), "speaker")
+
+
+class ClassifyImageFilenameTest(unittest.TestCase):
+    def test_discussion_keyword(self):
+        self.assertEqual(classify_image_filename("thao_luan.png"), "discussion")
+
+    def test_post_test_keyword(self):
+        self.assertEqual(classify_image_filename("post_test_slide.jpg"), "post_test")
+
+    def test_closing_keyword(self):
+        self.assertEqual(classify_image_filename("anh_ket_thuc.png"), "closing_image")
+
+    def test_unmatched_defaults_to_background(self):
+        self.assertEqual(classify_image_filename("random_photo_123.jpg"), "background")
+
+    def test_explicit_background_keyword(self):
+        self.assertEqual(classify_image_filename("nen_chuong_trinh.png"), "background")
+
+
+class ClassifyFileTest(unittest.TestCase):
+    def test_ppt_extension_routes_to_ppt_classifier(self):
+        self.assertEqual(classify_file("BS_Nguyen_Van_A.pptx"), "speaker")
+        self.assertEqual(classify_file("Khai_mac.pptx"), "opening")
+        self.assertEqual(classify_file("Ket_thuc.pptx"), "closing")
+
+    def test_image_extension_routes_to_image_classifier(self):
+        self.assertEqual(classify_file("thao_luan.png"), "discussion")
+        self.assertEqual(classify_file("random.jpg"), "background")
+
+    def test_case_insensitive_extension(self):
+        self.assertEqual(classify_file("anh_ket_thuc.PNG"), "closing_image")
+        self.assertEqual(classify_file("bai_bao_cao.PPTX"), "speaker")
 
 
 class GuessReportNameTest(unittest.TestCase):

@@ -2,25 +2,16 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (
-    QComboBox,
-    QDialog,
-    QDialogButtonBox,
-    QFileDialog,
-    QHeaderView,
-    QLabel,
-    QPushButton,
-    QTableWidget,
-    QTableWidgetItem,
-    QVBoxLayout,
-)
+# Logic nhận diện file dùng cho luồng nhập nhanh trong MainWindow.import_files():
+# chọn file PowerPoint hoặc ảnh, đoán vai trò theo tên file, áp dụng ngay vào
+# chương trình — không qua dialog xem trước riêng, việc "setup" (sửa lại vai trò/
+# chi tiết nếu đoán sai) diễn ra trực tiếp ở bảng báo cáo viên và bảng giao diện
+# chương trình trong cửa sổ chính.
 
-from core import Program, Report
-from i18n import tr
+IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp"}
 
-# Từ khóa (không dấu, chữ thường) cho biết file là giao diện chương trình chứ không phải
-# bài báo cáo của một báo cáo viên cụ thể.
+# Từ khóa (không dấu, chữ thường) cho biết file PowerPoint là giao diện chương trình
+# chứ không phải bài báo cáo của một báo cáo viên cụ thể.
 _INTERFACE_KEYWORDS = [
     "khai mac", "chuong trinh", "ket thuc", "mo dau", "giao dien",
     "background", "backgroud", "nen chuong trinh", "trailer",
@@ -28,7 +19,12 @@ _INTERFACE_KEYWORDS = [
 ]
 _CLOSING_KEYWORDS = ["ket thuc", "closing", "outro", "cam on", "be mac"]
 
-CLASSIFICATIONS = ["speaker", "opening", "closing", "skip"]
+# Từ khóa nhận diện vai trò của 1 file ẢNH (không phải PowerPoint).
+_IMAGE_ROLE_KEYWORDS = {
+    "closing_image": ["ket thuc", "closing", "outro", "cam on", "be mac"],
+    "post_test": ["post test", "posttest", "kiem tra", "khao sat"],
+    "discussion": ["thao luan", "discussion", "hoi dap"],
+}
 
 
 def _strip_diacritics(text: str) -> str:
@@ -38,6 +34,12 @@ def _strip_diacritics(text: str) -> str:
     return "".join(ch for ch in normalized if unicodedata.category(ch) != "Mn")
 
 
+def _normalized_stem(path: str) -> str:
+    stem = _strip_diacritics(Path(path).stem).lower()
+    normalized = stem.replace("_", " ").replace("-", " ").replace(".", " ")
+    return f" {normalized} "
+
+
 def guess_report_name(path: str) -> str:
     stem = Path(path).stem
     words = stem.replace("_", " ").replace("-", " ").replace(".", " ").split()
@@ -45,10 +47,8 @@ def guess_report_name(path: str) -> str:
 
 
 def classify_ppt_filename(path: str) -> str:
-    """Đoán loại file dựa theo tên: 'opening', 'closing' hoặc 'speaker'."""
-    stem = _strip_diacritics(Path(path).stem).lower()
-    normalized = stem.replace("_", " ").replace("-", " ").replace(".", " ")
-    padded = f" {normalized} "
+    """Đoán vai trò của 1 file PowerPoint dựa theo tên: 'opening', 'closing' hoặc 'speaker'."""
+    padded = _normalized_stem(path)
     if any(keyword in padded for keyword in _INTERFACE_KEYWORDS):
         if any(keyword in padded for keyword in _CLOSING_KEYWORDS):
             return "closing"
@@ -56,85 +56,20 @@ def classify_ppt_filename(path: str) -> str:
     return "speaker"
 
 
-class BulkImportDialog(QDialog):
-    """Cho phép chọn nhiều file PowerPoint cùng lúc; ứng dụng gợi ý phân loại
-    (báo cáo viên / giao diện mở đầu / giao diện kết thúc) và người dùng xác nhận
-    lại trước khi áp dụng vào chương trình."""
+def classify_image_filename(path: str) -> str:
+    """Đoán vai trò của 1 file ảnh: 'discussion', 'post_test', 'closing_image',
+    mặc định 'background' nếu không đoán được từ khóa nào."""
+    padded = _normalized_stem(path)
+    for role, keywords in _IMAGE_ROLE_KEYWORDS.items():
+        if any(keyword in padded for keyword in keywords):
+            return role
+    return "background"
 
-    LABELS = {
-        "speaker": "Báo cáo viên",
-        "opening": "Giao diện – Mở đầu",
-        "closing": "Giao diện – Kết thúc",
-        "skip": "Bỏ qua",
-    }
 
-    def __init__(self, parent, program: Program):
-        super().__init__(parent)
-        self.program = program
-        self.setWindowTitle(tr("Nhập nhiều file PowerPoint"))
-        self.setMinimumWidth(720)
-
-        info = QLabel(tr(
-            "Chọn nhiều file PowerPoint cùng lúc. Ứng dụng sẽ đoán file nào là bài báo cáo "
-            "và file nào là giao diện mở đầu/kết thúc dựa theo tên file — hãy kiểm tra và "
-            "sửa lại phân loại nếu đoán sai trước khi bấm Nhập."
-        ))
-        info.setWordWrap(True)
-
-        choose_btn = QPushButton(tr("Chọn file PowerPoint…"))
-        choose_btn.clicked.connect(self._choose_files)
-
-        self.table = QTableWidget(0, 3)
-        self.table.setHorizontalHeaderLabels([tr("File"), tr("Tên báo cáo viên (tạm)"), tr("Phân loại")])
-        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
-        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
-        self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
-
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        buttons.button(QDialogButtonBox.Ok).setText(tr("Nhập"))
-        buttons.button(QDialogButtonBox.Cancel).setText(tr("Hủy"))
-        buttons.accepted.connect(self._apply)
-        buttons.rejected.connect(self.reject)
-
-        layout = QVBoxLayout(self)
-        layout.addWidget(info)
-        layout.addWidget(choose_btn)
-        layout.addWidget(self.table, 1)
-        layout.addWidget(buttons)
-
-    def _choose_files(self):
-        paths, _ = QFileDialog.getOpenFileNames(
-            self, tr("Chọn file PowerPoint"), "",
-            "PowerPoint (*.ppt *.pptx *.pptm *.pps *.ppsx)",
-        )
-        if not paths:
-            return
-        self.table.setRowCount(len(paths))
-        for row, path in enumerate(paths):
-            file_item = QTableWidgetItem(Path(path).name)
-            file_item.setData(Qt.UserRole, path)
-            self.table.setItem(row, 0, file_item)
-            self.table.setItem(row, 1, QTableWidgetItem(guess_report_name(path)))
-            combo = QComboBox()
-            for key in CLASSIFICATIONS:
-                combo.addItem(tr(self.LABELS[key]), key)
-            guessed = classify_ppt_filename(path)
-            combo.setCurrentIndex(combo.findData(guessed))
-            self.table.setCellWidget(row, 2, combo)
-
-    def _apply(self):
-        added_reports = 0
-        for row in range(self.table.rowCount()):
-            file_item = self.table.item(row, 0)
-            path = file_item.data(Qt.UserRole)
-            classification = self.table.cellWidget(row, 2).currentData()
-            if classification == "speaker":
-                name = self.table.item(row, 1).text().strip() or guess_report_name(path)
-                self.program.reports.append(Report(name=name, ppt=path))
-                added_reports += 1
-            elif classification == "opening":
-                self.program.opening_ppt = path
-            elif classification == "closing":
-                self.program.closing_ppt = path
-        self._imported_count = added_reports
-        self.accept()
+def classify_file(path: str) -> str:
+    """Đoán vai trò cho 1 file bất kỳ (PowerPoint hoặc ảnh) khi nhập nhanh:
+    'speaker' | 'opening' | 'closing' (PowerPoint), hoặc
+    'background' | 'discussion' | 'post_test' | 'closing_image' (ảnh)."""
+    if Path(path).suffix.lower() in IMAGE_EXTENSIONS:
+        return classify_image_filename(path)
+    return classify_ppt_filename(path)
