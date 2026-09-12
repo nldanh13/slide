@@ -5,8 +5,8 @@ from pathlib import Path
 from unittest import mock
 
 import slide_export
-from core import Program
-from slide_export import SlideExportError, resolve_scene_image
+from core import Program, Report
+from slide_export import SlideExportError, resolve_report_photo, resolve_scene_image
 
 
 class ResolveSceneImageTest(unittest.TestCase):
@@ -81,6 +81,32 @@ class ResolveSceneImageTest(unittest.TestCase):
         def _fail(*_args, **_kwargs):
             raise AssertionError(message)
         return _fail
+
+
+class ResolveReportPhotoTest(unittest.TestCase):
+    def test_no_master_ppt_uses_dedicated_photo(self):
+        report = Report(photo="anh.png")
+        result = resolve_report_photo(Program(), report, export=ResolveSceneImageTest.fail("n/a"))
+        self.assertEqual(result, "anh.png")
+
+    def test_photo_slide_takes_priority_over_dedicated_photo(self):
+        program = Program(master_ppt="master.pptx")
+        report = Report(photo="anh.png", photo_slide=3)
+        result = resolve_report_photo(
+            program, report, export=lambda ppt, slide: f"/exported/{slide}.png"
+        )
+        self.assertEqual(result, "/exported/3.png")
+
+    def test_falls_back_to_dedicated_photo_when_export_fails(self):
+        program = Program(master_ppt="master.pptx")
+        report = Report(photo="anh.png", photo_slide=3)
+        result = resolve_report_photo(program, report, export=ResolveSceneImageTest.raise_error)
+        self.assertEqual(result, "anh.png")
+
+    def test_photo_slide_ignored_without_master_ppt(self):
+        report = Report(photo="anh.png", photo_slide=3)
+        result = resolve_report_photo(Program(), report, export=ResolveSceneImageTest.fail("n/a"))
+        self.assertEqual(result, "anh.png")
 
 
 class ExportSlideImageCacheTest(unittest.TestCase):

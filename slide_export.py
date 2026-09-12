@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from core import Program
+from core import Program, Report
 from paths import app_dir
 
 CACHE_DIR = app_dir() / "slide_cache"
@@ -100,3 +100,14 @@ def resolve_scene_image(program: Program, scene_type: str, export=export_slide_i
         except SlideExportError:
             pass
     return program.background
+
+
+def resolve_report_photo(program: Program, report: Report, export=export_slide_image) -> str:
+    """Xác định ảnh đại diện dùng cho báo cáo viên: ưu tiên slide được gán trong file
+    chương trình tổng (report.photo_slide), nếu không thì dùng ảnh riêng (report.photo)."""
+    if program.master_ppt and report.photo_slide > 0:
+        try:
+            return export(program.master_ppt, report.photo_slide)
+        except SlideExportError:
+            pass
+    return report.photo

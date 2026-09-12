@@ -92,6 +92,21 @@ class ValidateProgramTest(unittest.TestCase):
         program = Program(event_name="Hội nghị", reports=[])
         self.assertIn("Chưa có báo cáo viên.", validate_program(program))
 
+    def test_missing_name_and_topic_are_not_required(self):
+        program = Program(
+            event_name="Hội nghị",
+            reports=[Report(name="", topic="", ppt=__file__)],
+        )
+        self.assertEqual(validate_program(program), [])
+
+    def test_photo_slide_without_master_ppt_is_reported(self):
+        program = Program(
+            event_name="Hội nghị",
+            reports=[Report(name="A", topic="T", ppt=__file__, photo_slide=2)],
+        )
+        errors = validate_program(program)
+        self.assertTrue(any("chưa chọn file chương trình tổng" in e for e in errors))
+
     def test_missing_ppt_file_is_reported(self):
         program = Program(
             event_name="Hội nghị",

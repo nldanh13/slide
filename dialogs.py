@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core import Report
+from core import Program, Report
 from i18n import tr
 from qr_utils import make_qr_pixmap
 from remote import RemoteControl
@@ -28,10 +28,11 @@ def choose_file(parent, title, file_filter):
 
 
 class ReportDialog(QDialog):
-    def __init__(self, parent=None, report: Report | None = None):
+    def __init__(self, parent, program: Program, report: Report | None = None):
         super().__init__(parent)
         self.setWindowTitle(tr("Thông tin báo cáo viên"))
         self.setMinimumWidth(650)
+        self.program = program
         report = report or Report()
 
         self.name = QLineEdit(report.name)
@@ -43,11 +44,23 @@ class ReportDialog(QDialog):
         self.duration.setRange(1, 240)
         self.duration.setValue(report.duration_minutes)
 
+        self.photo_slide_spin = QSpinBox()
+        self.photo_slide_spin.setRange(0, 999)
+        self.photo_slide_spin.setSpecialValueText(tr("Không dùng"))
+        self.photo_slide_spin.setValue(report.photo_slide)
+        has_master_ppt = bool(self.program.master_ppt)
+        self.photo_slide_spin.setEnabled(has_master_ppt)
+        self.photo_slide_spin.setToolTip(
+            tr("Số slide trong file chương trình tổng")
+            if has_master_ppt
+            else tr('Cần chọn "File chương trình tổng" ở tab Giao diện chương trình trước')
+        )
+
         form = QFormLayout()
-        form.addRow(tr("Họ tên, học hàm/học vị*"), self.name)
+        form.addRow(tr("Họ tên, học hàm/học vị"), self.name)
         form.addRow(tr("Đơn vị"), self.department)
-        form.addRow(tr("Tên chuyên đề*"), self.topic)
-        form.addRow(tr("Ảnh báo cáo viên"), self._path_row(self.photo, "Ảnh (*.png *.jpg *.jpeg)"))
+        form.addRow(tr("Tên chuyên đề"), self.topic)
+        form.addRow(tr("Ảnh báo cáo viên"), self._photo_row())
         form.addRow(tr("File PowerPoint*"), self._path_row(self.ppt, "PowerPoint (*.ppt *.pptx *.pptm *.pps *.ppsx)"))
         form.addRow(tr("Thời lượng dự kiến (phút)"), self.duration)
 
@@ -73,11 +86,28 @@ class ReportDialog(QDialog):
         row.addWidget(button)
         return box
 
+    def _photo_row(self):
+        """Ảnh báo cáo viên: chọn 1 slide trong file chương trình tổng (nếu đã cấu hình)
+        HOẶC chọn ảnh có sẵn — dùng slide nếu có, không thì rơi về ảnh riêng."""
+        box = QWidget()
+        row = QHBoxLayout(box)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.addWidget(QLabel(tr("Slide số:")))
+        row.addWidget(self.photo_slide_spin)
+        row.addSpacing(10)
+        row.addWidget(QLabel(tr("hoặc ảnh:")))
+        row.addWidget(self.photo, 1)
+        button = QPushButton(tr("Chọn…"))
+        button.clicked.connect(
+            lambda: (value := choose_file(self, tr("Chọn file"), "Ảnh (*.png *.jpg *.jpeg)"))
+            and self.photo.setText(value)
+        )
+        row.addWidget(button)
+        return box
+
     def _accept(self):
-        if not self.name.text().strip() or not self.topic.text().strip() or not self.ppt.text().strip():
-            QMessageBox.warning(self, tr("Thiếu thông tin"), tr(
-                "Vui lòng nhập họ tên, chuyên đề và chọn file PowerPoint."
-            ))
+        if not self.ppt.text().strip():
+            QMessageBox.warning(self, tr("Thiếu thông tin"), tr("Vui lòng chọn file PowerPoint."))
             return
         self.accept()
 
@@ -87,6 +117,7 @@ class ReportDialog(QDialog):
             department=self.department.text().strip(),
             topic=self.topic.text().strip(),
             photo=self.photo.text().strip(),
+            photo_slide=self.photo_slide_spin.value(),
             ppt=self.ppt.text().strip(),
             duration_minutes=self.duration.value(),
         )

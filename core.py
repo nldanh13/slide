@@ -15,6 +15,7 @@ class Report:
     department: str = ""
     topic: str = ""
     photo: str = ""
+    photo_slide: int = 0
     ppt: str = ""
     duration_minutes: int = 15
 
@@ -158,15 +159,15 @@ def validate_program(program: Program) -> list[str]:
     if not program.reports:
         errors.append("Chưa có báo cáo viên.")
     for index, report in enumerate(program.reports, start=1):
-        if not report.name.strip():
-            errors.append(f"Báo cáo {index}: thiếu tên báo cáo viên.")
-        if not report.topic.strip():
-            errors.append(f"Báo cáo {index}: thiếu tên chuyên đề.")
         if not report.ppt:
             errors.append(f"Báo cáo {index}: chưa chọn file PowerPoint.")
         elif not Path(report.ppt).is_file():
             errors.append(f"Báo cáo {index}: không tìm thấy {report.ppt}")
         if report.photo and not Path(report.photo).is_file():
             errors.append(f"Báo cáo {index}: không tìm thấy ảnh {report.photo}")
+        if report.photo_slide > 0 and not program.master_ppt:
+            errors.append(
+                f"Báo cáo {index}: đã chọn slide ảnh nhưng chưa chọn file chương trình tổng."
+            )
     return errors
 

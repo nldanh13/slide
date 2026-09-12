@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from core import Program
 from qr_utils import make_qr_pixmap
-from slide_export import resolve_scene_image
+from slide_export import resolve_report_photo, resolve_scene_image
 
 
 class StageWindow(QWidget):
@@ -123,8 +123,9 @@ class StageWindow(QWidget):
             self.title.setText(report.name.upper())
             details = [report.department, "", report.topic.upper()]
             self.subtitle.setText("\n".join(details))
-            if report.photo and Path(report.photo).is_file():
-                pix = QPixmap(report.photo).scaled(self.photo.size(), Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+            photo_path = resolve_report_photo(self.program, report)
+            if photo_path and Path(photo_path).is_file():
+                pix = QPixmap(photo_path).scaled(self.photo.size(), Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
                 self.photo.setPixmap(pix)
                 self.photo.show()
         elif scene_type == "transition":

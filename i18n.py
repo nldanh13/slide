@@ -186,9 +186,9 @@ _TRANSLATIONS: dict[str, str] = {
         "The show is currently running. Closing the app will stop everything. Continue?"
     ),
     "Thông tin báo cáo viên": "Speaker information",
-    "Họ tên, học hàm/học vị*": "Full name, title*",
+    "Họ tên, học hàm/học vị": "Full name, title",
     "Đơn vị": "Department",
-    "Tên chuyên đề*": "Topic title*",
+    "Tên chuyên đề": "Topic title",
     "Ảnh báo cáo viên": "Speaker photo",
     "File PowerPoint*": "PowerPoint file*",
     "Thời lượng dự kiến (phút)": "Expected duration (minutes)",
@@ -197,8 +197,12 @@ _TRANSLATIONS: dict[str, str] = {
     "Chọn…": "Choose…",
     "Chọn file": "Choose file",
     "Thiếu thông tin": "Missing information",
-    "Vui lòng nhập họ tên, chuyên đề và chọn file PowerPoint.": (
-        "Please enter the name, topic and select a PowerPoint file."
+    "Vui lòng chọn file PowerPoint.": "Please select a PowerPoint file.",
+    "Slide số:": "Slide no.:",
+    "hoặc ảnh:": "or image:",
+    "Số slide trong file chương trình tổng": "Slide number in the master program file",
+    'Cần chọn "File chương trình tổng" ở tab Giao diện chương trình trước': (
+        'Set the "Master program file" in the Program interface tab first'
     ),
     "Điều khiển từ xa": "Remote control",
     "Dùng điện thoại kết nối cùng Wi-Fi với máy tính này, quét mã QR "

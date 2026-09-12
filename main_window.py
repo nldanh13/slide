@@ -636,7 +636,7 @@ class MainWindow(QMainWindow):
         row = self.selected_row()
         if row < 0:
             return
-        dialog = ReportDialog(self, self.program.reports[row])
+        dialog = ReportDialog(self, self.program, self.program.reports[row])
         if dialog.exec():
             self.program.reports[row] = dialog.report()
             self._refresh_table()
