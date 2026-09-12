@@ -60,6 +60,10 @@ QPushButton:hover { background: #d8e3f3; }
 QPushButton#primary { background: #075985; color: white; font-weight: 700; }
 QPushButton#primary:hover { background: #0369a1; }
 QPushButton#danger { background: #fee2e2; color: #991b1b; }
+QMenu { background: #ffffff; color: #162033; border: 1px solid #ccd5e2; }
+QMenu::item { padding: 6px 24px; background: transparent; }
+QMenu::item:selected { background: #d8e3f3; }
+QMenu::separator { height: 1px; background: #e5eaf1; margin: 4px 0; }
 """
 
 SCENE_LABELS = {
