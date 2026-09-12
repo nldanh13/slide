@@ -63,6 +63,17 @@ Nếu bạn không ngồi ngay cạnh máy tính chạy chương trình (ví d�
 mạng Wi-Fi bấm nhầm; mỗi lần mở lại ứng dụng sẽ sinh mã mới. Tính năng này chỉ nên
 dùng trong mạng nội bộ/tin cậy của sự kiện.
 
+## Màn hình ảo (test khi không có máy chiếu)
+
+Nếu chưa có máy chiếu/màn hình thứ 2 để test, tick vào ô **"Màn hình ảo (chỉ bật khi
+test, không có máy chiếu)"** ở khung thông tin chương trình. Khi đó màn hình sân khấu
+sẽ hiện ra dưới dạng một cửa sổ nhỏ (960×540) thay vì chiếm toàn màn hình, giúp bạn
+vừa thao tác ở cửa sổ điều khiển vừa xem thử kết quả trên cùng một màn hình laptop.
+
+Khi trình chiếu thật (có máy chiếu/màn hình thứ 2), hãy **bỏ tick** ô này để màn hình
+sân khấu hiển thị toàn màn hình như bình thường — mặc định ô này luôn tắt mỗi khi mở
+ứng dụng.
+
 ## Lưu ý màn hình PowerPoint
 
 PowerPoint dùng màn hình trình chiếu đã chọn trong chính PowerPoint. Trước chương trình,

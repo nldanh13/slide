@@ -8,6 +8,7 @@ from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QAction, QFont, QKeySequence, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
+    QCheckBox,
     QComboBox,
     QDialog,
     QDialogButtonBox,
@@ -175,6 +176,7 @@ class StageWindow(QWidget):
         super().__init__()
         self.setWindowTitle("Màn hình trình chiếu")
         self.setWindowFlags(Qt.FramelessWindowHint)
+        self.simulate = False
         self.background_path = ""
         self.background = QPixmap()
         self.scene = {}
@@ -239,6 +241,18 @@ class StageWindow(QWidget):
         else:
             painter.fillRect(self.rect(), Qt.GlobalColor.darkBlue)
         painter.fillRect(self.rect(), QColorWithAlpha(3, 37, 65, 185))
+
+    def set_simulation_mode(self, enabled: bool) -> None:
+        """Bật/tắt chế độ 'màn hình ảo': hiện dạng cửa sổ thường thay vì toàn màn hình,
+        để test luồng chương trình khi không có màn hình chiếu/máy chiếu thật."""
+        if self.simulate == enabled:
+            return
+        self.simulate = enabled
+        was_visible = self.isVisible()
+        self.hide()
+        self.setWindowFlags(Qt.Window if enabled else Qt.FramelessWindowHint)
+        if was_visible:
+            self.show()
 
     def set_program(self, program: Program):
         self.program = program
@@ -375,6 +389,13 @@ class MainWindow(QMainWindow):
         form.addWidget(self.discussion, 3, 4)
         form.addWidget(QLabel("Link Post-test"), 4, 0)
         form.addWidget(self.post_url, 4, 1, 1, 4)
+        self.virtual_screen = QCheckBox("Màn hình ảo (chỉ bật khi test, không có máy chiếu)")
+        self.virtual_screen.setToolTip(
+            "Khi bật: màn hình sân khấu hiện dưới dạng cửa sổ nhỏ để xem thử,\n"
+            "không chiếm toàn màn hình — dùng khi không có máy chiếu/màn hình thứ 2 để test.\n"
+            "Khi trình chiếu thật, hãy tắt mục này."
+        )
+        form.addWidget(self.virtual_screen, 5, 3, 1, 2)
         root.addLayout(form)
 
         toolbar = QHBoxLayout()
@@ -541,8 +562,18 @@ class MainWindow(QMainWindow):
         if screen is None:
             screen = QApplication.primaryScreen()
         self.stage.set_program(self.program)
-        self.stage.setGeometry(screen.geometry())
-        self.stage.showFullScreen()
+        if self.virtual_screen.isChecked():
+            self.stage.set_simulation_mode(True)
+            self.stage.setWindowTitle("Màn hình sân khấu (ẢO – chỉ dùng để test)")
+            self.stage.resize(960, 540)
+            geometry = screen.geometry()
+            self.stage.move(geometry.x() + 40, geometry.y() + 40)
+            self.stage.show()
+        else:
+            self.stage.set_simulation_mode(False)
+            self.stage.setWindowTitle("Màn hình trình chiếu")
+            self.stage.setGeometry(screen.geometry())
+            self.stage.showFullScreen()
         self.stage.raise_()
 
     def preview(self):
