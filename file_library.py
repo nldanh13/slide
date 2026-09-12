@@ -9,6 +9,13 @@ from i18n import tr
 
 PPT_FILTER = "PowerPoint (*.ppt *.pptx *.pptm *.pps *.ppsx)"
 IMAGE_FILTER = "Ảnh (*.png *.jpg *.jpeg *.bmp)"
+AUDIO_FILTER = "Âm thanh (*.mp3 *.wav *.ogg *.m4a *.flac)"
+
+_LIBRARY_BY_KIND = {
+    "ppt": ("ppt_library", PPT_FILTER),
+    "image": ("image_library", IMAGE_FILTER),
+    "audio": ("audio_library", AUDIO_FILTER),
+}
 
 
 def choose_file(parent, title: str, file_filter: str) -> str:
@@ -18,13 +25,14 @@ def choose_file(parent, title: str, file_filter: str) -> str:
 
 
 def pick_file(parent, program: Program, anchor_button: QPushButton, kind: str) -> str:
-    """Chọn 1 file PowerPoint/ảnh: ưu tiên cho chọn lại file đã nhập trước đó ở bất kỳ
-    đâu trong chương trình (thư viện dùng chung — mỗi file chỉ cần duyệt 1 lần), hoặc
-    nhập file mới từ máy nếu chưa có trong thư viện. Thay cho việc mỗi nơi trong ứng
-    dụng tự mở hộp thoại duyệt file riêng lẻ, rối và không liên kết với nhau.
+    """Chọn 1 file PowerPoint/ảnh/âm thanh (`kind` là "ppt", "image" hoặc "audio"):
+    ưu tiên cho chọn lại file đã nhập trước đó ở bất kỳ đâu trong chương trình (thư
+    viện dùng chung — mỗi file chỉ cần duyệt 1 lần), hoặc nhập file mới từ máy nếu
+    chưa có trong thư viện. Thay cho việc mỗi nơi trong ứng dụng tự mở hộp thoại
+    duyệt file riêng lẻ, rối và không liên kết với nhau.
     Trả về đường dẫn đã chọn, hoặc "" nếu người dùng hủy."""
-    library = program.ppt_library if kind == "ppt" else program.image_library
-    file_filter = PPT_FILTER if kind == "ppt" else IMAGE_FILTER
+    library_attr, file_filter = _LIBRARY_BY_KIND[kind]
+    library = getattr(program, library_attr)
 
     if not library:
         # Chưa có file nào trong thư viện để chọn lại — mở thẳng hộp thoại duyệt file,

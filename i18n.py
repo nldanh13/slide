@@ -278,6 +278,7 @@ _TRANSLATIONS: dict[str, str] = {
     "Thảo luận (ảnh riêng)": "Discussion (dedicated image)",
     "Post-test (ảnh riêng)": "Post-test (dedicated image)",
     "Kết thúc (ảnh riêng)": "Closing (dedicated image)",
+    "Nhạc nền (chờ / thảo luận / kết thúc)": "Background music (waiting / discussion / closing)",
     "Cấu hình slide nâng cao (từ file chương trình tổng)…": "Advanced slide setup (from master program file)…",
     "Chọn file báo cáo viên hoặc file/ảnh giao diện": "Choose speaker files or interface files/images",
     "PowerPoint & Ảnh": "PowerPoint & Images",

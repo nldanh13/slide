@@ -107,6 +107,15 @@ class ValidateProgramTest(unittest.TestCase):
         errors = validate_program(program)
         self.assertTrue(any("chưa chọn file chương trình tổng" in e for e in errors))
 
+    def test_missing_background_music_is_reported(self):
+        program = Program(
+            event_name="Hội nghị",
+            background_music="khong_ton_tai.mp3",
+            reports=[Report(name="A", topic="T", ppt=__file__)],
+        )
+        errors = validate_program(program)
+        self.assertTrue(any("nhạc nền" in e for e in errors))
+
     def test_missing_ppt_file_is_reported(self):
         program = Program(
             event_name="Hội nghị",
@@ -216,6 +225,13 @@ class RememberFileTest(unittest.TestCase):
         program.remember_file("nen.png")
         self.assertEqual(program.image_library, ["nen.png"])
         self.assertEqual(program.ppt_library, [])
+
+    def test_audio_file_goes_to_audio_library(self):
+        program = Program()
+        program.remember_file("nhac_nen.mp3")
+        self.assertEqual(program.audio_library, ["nhac_nen.mp3"])
+        self.assertEqual(program.ppt_library, [])
+        self.assertEqual(program.image_library, [])
 
     def test_unknown_extension_is_ignored(self):
         program = Program()

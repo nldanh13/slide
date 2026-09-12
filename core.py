@@ -26,6 +26,7 @@ INTERFACE_ROLES = ["background", "discussion", "post_test", "closing"]
 
 _PPT_EXTENSIONS = {".ppt", ".pptx", ".pptm", ".pps", ".ppsx"}
 _IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp"}
+_AUDIO_EXTENSIONS = {".mp3", ".wav", ".ogg", ".m4a", ".flac"}
 
 
 @dataclass
@@ -46,14 +47,19 @@ class Program:
     discussion_image: str = ""
     post_test_image: str = ""
     closing_image: str = ""
+    #: Nhạc nền phát lặp lại khi chờ khai mạc, giải lao thảo luận và lúc kết thúc
+    #: (tự tắt khi có báo cáo viên đang trình bày hoặc PowerPoint khai mạc/kết thúc chạy).
+    background_music: str = ""
     reports: list[Report] = field(default_factory=list)
     #: Thư viện file đã nhập ở bất kỳ đâu trong chương trình — cho phép chọn lại ngay
     #: ở chỗ khác thay vì phải duyệt file lại từ đầu mỗi lần (xem file_library.py).
     ppt_library: list[str] = field(default_factory=list)
     image_library: list[str] = field(default_factory=list)
+    audio_library: list[str] = field(default_factory=list)
 
     def remember_file(self, path: str) -> None:
-        """Ghi nhớ 1 file (PowerPoint hoặc ảnh) vào thư viện dùng chung của chương trình."""
+        """Ghi nhớ 1 file (PowerPoint, ảnh hoặc âm thanh) vào thư viện dùng chung của
+        chương trình."""
         if not path:
             return
         ext = Path(path).suffix.lower()
@@ -61,6 +67,8 @@ class Program:
             library = self.ppt_library
         elif ext in _IMAGE_EXTENSIONS:
             library = self.image_library
+        elif ext in _AUDIO_EXTENSIONS:
+            library = self.audio_library
         else:
             return
         if path not in library:
@@ -162,6 +170,8 @@ def validate_program(program: Program) -> list[str]:
         errors.append(f"Không tìm thấy ảnh nền: {program.background}")
     if program.logo and not Path(program.logo).is_file():
         errors.append(f"Không tìm thấy ảnh logo: {program.logo}")
+    if program.background_music and not Path(program.background_music).is_file():
+        errors.append(f"Không tìm thấy file nhạc nền: {program.background_music}")
     if program.opening_ppt and not Path(program.opening_ppt).is_file():
         errors.append(f"Không tìm thấy file PowerPoint khai mạc: {program.opening_ppt}")
     if program.closing_ppt and not Path(program.closing_ppt).is_file():

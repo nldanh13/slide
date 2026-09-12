@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from audio_player import AudioController
 from backup_dialog import BackupDialog
 from backups import create_backup
 from bulk_import import classify_file, guess_report_name
@@ -156,7 +157,12 @@ INTERFACE_SLOTS = [
     ("post_test_image", "Post-test (ảnh riêng)", "image"),
     ("closing_ppt", "Kết thúc (PowerPoint)", "ppt"),
     ("closing_image", "Kết thúc (ảnh riêng)", "image"),
+    ("background_music", "Nhạc nền (chờ / thảo luận / kết thúc)", "audio"),
 ]
+
+#: Loại cảnh được phát nhạc nền (chờ khai mạc, giải lao, kết thúc) — các cảnh còn lại
+#: (báo cáo viên, PowerPoint, post-test) sẽ tắt nhạc để không chồng tiếng.
+_MUSIC_SCENE_TYPES = {"opening", "discussion", "closing"}
 
 
 class _AspectRatioBox(QWidget):
@@ -200,6 +206,7 @@ class MainWindow(QMainWindow):
         self.stage = StageWindow()
         self.stage.escape_requested.connect(self.stop_show)
         self.timer_overlay = TimerOverlay()
+        self.audio = AudioController()
 
         self.remote = RemoteControl()
         self.remote.next_requested.connect(self.next_scene)
@@ -768,6 +775,15 @@ class MainWindow(QMainWindow):
         self.preview_pane.show_scene(scene)
         self.preview_caption.setText(caption or self._scene_label(scene))
 
+    def _apply_scene_audio(self, scene: dict) -> None:
+        """Phát/tắt nhạc nền theo loại cảnh hiện tại — chỉ phát khi chờ khai mạc,
+        giải lao thảo luận hoặc lúc kết thúc; tắt khi báo cáo viên đang trình bày
+        hoặc các cảnh khác, tránh chồng tiếng."""
+        if scene.get("type") in _MUSIC_SCENE_TYPES and self.program.background_music:
+            self.audio.play_loop(self.program.background_music)
+        else:
+            self.audio.stop()
+
     def _show_stage(self):
         screen = self.screen.currentData()
         if screen is None:
@@ -794,6 +810,7 @@ class MainWindow(QMainWindow):
         scene = {"type": "opening", "title": "CHÀO MỪNG QUÝ ĐẠI BIỂU"}
         self.stage.show_scene(scene)
         self._update_preview(scene, tr("Xem thử: Màn hình mở đầu"))
+        self._apply_scene_audio(scene)
 
     def show_remote_dialog(self):
         dialog = RemoteDialog(self, self.remote)
@@ -843,6 +860,7 @@ class MainWindow(QMainWindow):
             # lộ desktop trong khoảng trống giữa lúc ẩn app và lúc PowerPoint kịp toàn màn hình.
             self.ppt_seen_running = False
             self._pending_ppt_hide_stage = True
+            self.audio.stop()
             try:
                 self.ppt.start(scene["report"].ppt)
                 # PowerPoint chạy qua COM nên không thể chiếu trực tiếp vào khung xem
@@ -863,6 +881,7 @@ class MainWindow(QMainWindow):
             self._show_stage()
             self.stage.show_scene(scene)
             self._update_preview(scene, label)
+            self._apply_scene_audio(scene)
 
     def _scene_label(self, scene: dict) -> str:
         if scene["type"] == "powerpoint" and scene.get("interface_kind"):
@@ -890,6 +909,7 @@ class MainWindow(QMainWindow):
         self._show_stage()
         self.stage.show_scene(scene)
         self._update_preview(scene, self._scene_label(scene))
+        self._apply_scene_audio(scene)
         QApplication.processEvents()
 
     def _confirm_interrupt_presentation(self) -> bool:
@@ -964,6 +984,7 @@ class MainWindow(QMainWindow):
         self.ppt.close_presentation()
         self.stage.hide()
         self.timer_overlay.stop()
+        self.audio.stop()
         self.scenes = []
         self.scene_index = -1
         self._update_preview({"type": "opening", "title": tr("CHƯA BẮT ĐẦU TRÌNH CHIẾU")}, tr("Chưa bắt đầu"))
@@ -978,6 +999,7 @@ class MainWindow(QMainWindow):
             return
         self.stage.close()
         self.timer_overlay.close()
+        self.audio.stop()
         self.ppt.shutdown()
         self.remote.stop()
         self._clear_autosave()
